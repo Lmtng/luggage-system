@@ -15,13 +15,18 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
+import com.luggage.luggagesystem.service.LockerCellService;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SpringBootTest
 @Transactional
 class MemberADataAccessTests {
+    @Autowired
+    private LockerCellService lockerCellService;
 
     @Autowired
     private SysUserMapper sysUserMapper;
@@ -92,5 +97,48 @@ class MemberADataAccessTests {
         assertEquals(CellSizeType.MEDIUM, savedCell.getSizeType());
         assertEquals(CellStatus.AVAILABLE, savedCell.getStatus());
         assertEquals(0, savedCell.getVersion());
+    }
+    @Test
+    void occupyAndReleaseCellWorks() {
+        Locker locker = new Locker();
+        locker.setLockerCode("STATUS_TEST_" + System.nanoTime());
+        locker.setName("状态测试寄存柜");
+        locker.setLocation("测试位置");
+        locker.setStatus(LockerStatus.ENABLED);
+
+        assertEquals(1, lockerMapper.insert(locker));
+        assertNotNull(locker.getId());
+
+        LockerCell cell = new LockerCell();
+        cell.setLockerId(locker.getId());
+        cell.setCellNo("B01");
+        cell.setSizeType(CellSizeType.SMALL);
+        cell.setStatus(CellStatus.AVAILABLE);
+        cell.setVersion(0);
+
+        assertEquals(1, lockerCellMapper.insert(cell));
+        assertNotNull(cell.getId());
+
+        boolean firstOccupy = lockerCellService.occupyCell(cell.getId());
+        boolean secondOccupy = lockerCellService.occupyCell(cell.getId());
+
+        assertTrue(firstOccupy);
+        assertFalse(secondOccupy);
+
+        LockerCell occupiedCell = lockerCellMapper.selectById(cell.getId());
+
+        assertEquals(CellStatus.OCCUPIED, occupiedCell.getStatus());
+        assertEquals(1, occupiedCell.getVersion());
+
+        boolean firstRelease = lockerCellService.releaseCell(cell.getId());
+        boolean secondRelease = lockerCellService.releaseCell(cell.getId());
+
+        assertTrue(firstRelease);
+        assertFalse(secondRelease);
+
+        LockerCell releasedCell = lockerCellMapper.selectById(cell.getId());
+
+        assertEquals(CellStatus.AVAILABLE, releasedCell.getStatus());
+        assertEquals(2, releasedCell.getVersion());
     }
 }
