@@ -1,5 +1,8 @@
 package com.luggage.luggagesystem.mapper;
+import com.luggage.luggagesystem.enums.CellSizeType;
+import org.apache.ibatis.annotations.Select;
 
+import java.util.List;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.luggage.luggagesystem.entity.LockerCell;
 import org.apache.ibatis.annotations.Mapper;
@@ -41,4 +44,37 @@ public interface LockerCellMapper extends BaseMapper<LockerCell> {
               AND status = 'OCCUPIED'
             """)
     int releaseIfOccupied(@Param("cellId") Long cellId);
+    /**
+     * 查询所有启用寄存柜中的空闲柜格。
+     *
+     * @return 空闲柜格列表
+     */
+    @Select("""
+        SELECT c.*
+        FROM locker_cell c
+        INNER JOIN locker l ON l.id = c.locker_id
+        WHERE c.status = 'AVAILABLE'
+          AND l.status = 'ENABLED'
+        ORDER BY c.locker_id, c.cell_no
+        """)
+    List<LockerCell> selectAvailableCells();
+
+    /**
+     * 根据规格查询启用寄存柜中的空闲柜格。
+     *
+     * @param sizeType 柜格规格
+     * @return 符合条件的空闲柜格
+     */
+    @Select("""
+        SELECT c.*
+        FROM locker_cell c
+        INNER JOIN locker l ON l.id = c.locker_id
+        WHERE c.status = 'AVAILABLE'
+          AND l.status = 'ENABLED'
+          AND c.size_type = #{sizeType}
+        ORDER BY c.locker_id, c.cell_no
+        """)
+    List<LockerCell> selectAvailableCellsBySize(
+            @Param("sizeType") CellSizeType sizeType
+    );
 }

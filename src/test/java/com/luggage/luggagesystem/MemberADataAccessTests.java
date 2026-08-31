@@ -1,4 +1,5 @@
 package com.luggage.luggagesystem;
+import java.util.List;
 
 import com.luggage.luggagesystem.entity.Locker;
 import com.luggage.luggagesystem.entity.LockerCell;
@@ -141,4 +142,71 @@ class MemberADataAccessTests {
         assertEquals(CellStatus.AVAILABLE, releasedCell.getStatus());
         assertEquals(2, releasedCell.getVersion());
     }
-}
+    @Test
+    void availableCellQueryOnlyReturnsUsableCells() {
+        Locker enabledLocker = new Locker();
+        enabledLocker.setLockerCode("QUERY_ENABLED_" + System.nanoTime());
+        enabledLocker.setName("启用寄存柜");
+        enabledLocker.setLocation("测试位置");
+        enabledLocker.setStatus(LockerStatus.ENABLED);
+        lockerMapper.insert(enabledLocker);
+
+        Locker disabledLocker = new Locker();
+        disabledLocker.setLockerCode("QUERY_DISABLED_" + System.nanoTime());
+        disabledLocker.setName("停用寄存柜");
+        disabledLocker.setLocation("测试位置");
+        disabledLocker.setStatus(LockerStatus.DISABLED);
+        lockerMapper.insert(disabledLocker);
+
+        LockerCell availableSmallCell = new LockerCell();
+        availableSmallCell.setLockerId(enabledLocker.getId());
+        availableSmallCell.setCellNo("S01");
+        availableSmallCell.setSizeType(CellSizeType.SMALL);
+        availableSmallCell.setStatus(CellStatus.AVAILABLE);
+        availableSmallCell.setVersion(0);
+        lockerCellMapper.insert(availableSmallCell);
+
+        LockerCell occupiedSmallCell = new LockerCell();
+        occupiedSmallCell.setLockerId(enabledLocker.getId());
+        occupiedSmallCell.setCellNo("S02");
+        occupiedSmallCell.setSizeType(CellSizeType.SMALL);
+        occupiedSmallCell.setStatus(CellStatus.OCCUPIED);
+        occupiedSmallCell.setVersion(0);
+        lockerCellMapper.insert(occupiedSmallCell);
+
+        LockerCell availableLargeCell = new LockerCell();
+        availableLargeCell.setLockerId(enabledLocker.getId());
+        availableLargeCell.setCellNo("L01");
+        availableLargeCell.setSizeType(CellSizeType.LARGE);
+        availableLargeCell.setStatus(CellStatus.AVAILABLE);
+        availableLargeCell.setVersion(0);
+        lockerCellMapper.insert(availableLargeCell);
+
+        LockerCell disabledLockerCell = new LockerCell();
+        disabledLockerCell.setLockerId(disabledLocker.getId());
+        disabledLockerCell.setCellNo("S01");
+        disabledLockerCell.setSizeType(CellSizeType.SMALL);
+        disabledLockerCell.setStatus(CellStatus.AVAILABLE);
+        disabledLockerCell.setVersion(0);
+        lockerCellMapper.insert(disabledLockerCell);
+
+        List<LockerCell> smallCells =
+                lockerCellService.listAvailableCells(CellSizeType.SMALL);
+
+        assertTrue(containsCell(smallCells, availableSmallCell.getId()));
+        assertFalse(containsCell(smallCells, occupiedSmallCell.getId()));
+        assertFalse(containsCell(smallCells, availableLargeCell.getId()));
+        assertFalse(containsCell(smallCells, disabledLockerCell.getId()));
+
+        List<LockerCell> allCells =
+                lockerCellService.listAvailableCells(null);
+
+        assertTrue(containsCell(allCells, availableSmallCell.getId()));
+        assertTrue(containsCell(allCells, availableLargeCell.getId()));
+        assertFalse(containsCell(allCells, occupiedSmallCell.getId()));
+        assertFalse(containsCell(allCells, disabledLockerCell.getId()));
+    }
+    private boolean containsCell(List<LockerCell> cells, Long cellId) {
+        return cells.stream()
+                .anyMatch(cell -> cellId.equals(cell.getId()));
+    }}
