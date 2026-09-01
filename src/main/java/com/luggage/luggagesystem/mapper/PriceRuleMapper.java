@@ -15,7 +15,7 @@ public interface PriceRuleMapper extends BaseMapper<PriceRule> {
     /**
      * 根据规格查询启用的计费规则
      */
-    @Select("SELECT * FROM price_rule WHERE size_type = #{sizeType} AND enabled = 1")
+    @Select("SELECT * FROM price_rule WHERE size_type = #{sizeType} AND enabled = 1 LIMIT 1")
     PriceRule selectEnabledBySizeType(@Param("sizeType") String sizeType);
 
     /**
