@@ -1,8 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '../store/user'
+import Layout from '../components/Layout.vue'
 
 const routes = [
-    // 公开路由
+    // 公开路由（不使用 Layout）
     {
         path: '/login',
         name: 'Login',
@@ -16,56 +17,62 @@ const routes = [
         meta: { public: true }
     },
 
-    // 用户路由
+    // 需要登录的路由（使用 Layout）
     {
         path: '/',
-        name: 'UserHome',
-        component: () => import('../views/UserHome.vue'),
-        meta: { requiresAuth: true, role: 'USER' }
-    },
-    {
-        path: '/orders',
-        name: 'Orders',
-        component: () => import('../views/Orders.vue'),
-        meta: { requiresAuth: true, role: 'USER' }
-    },
-    {
-        path: '/order/:id',
-        name: 'OrderDetail',
-        component: () => import('../views/OrderDetail.vue'),
-        meta: { requiresAuth: true, role: 'USER' }
-    },
-    {
-        path: '/pickup',
-        name: 'Pickup',
-        component: () => import('../views/Pickup.vue'),
-        meta: { requiresAuth: true, role: 'USER' }
+        component: Layout,
+        meta: { requiresAuth: true },
+        children: [
+            {
+                path: '',
+                name: 'UserHome',
+                component: () => import('../views/UserHome.vue')
+            },
+            {
+                path: 'orders',
+                name: 'Orders',
+                component: () => import('../views/Orders.vue')
+            },
+            {
+                path: 'order/:id',
+                name: 'OrderDetail',
+                component: () => import('../views/OrderDetail.vue')
+            },
+            {
+                path: 'pickup',
+                name: 'Pickup',
+                component: () => import('../views/Pickup.vue')
+            }
+        ]
     },
 
-    // 管理员路由
+    // 管理员路由（使用 Layout，需要 admin 权限）
     {
         path: '/admin',
-        name: 'AdminHome',
-        component: () => import('../views/admin/AdminHome.vue'),
-        meta: { requiresAuth: true, role: 'ADMIN' }
-    },
-    {
-        path: '/admin/orders',
-        name: 'OrderManage',
-        component: () => import('../views/admin/OrderManage.vue'),
-        meta: { requiresAuth: true, role: 'ADMIN' }
-    },
-    {
-        path: '/admin/price-rules',
-        name: 'PriceRule',
-        component: () => import('../views/admin/PriceRule.vue'),
-        meta: { requiresAuth: true, role: 'ADMIN' }
-    },
-    {
-        path: '/admin/statistics',
-        name: 'Statistics',
-        component: () => import('../views/admin/Statistics.vue'),
-        meta: { requiresAuth: true, role: 'ADMIN' }
+        component: Layout,
+        meta: { requiresAuth: true, admin: true },
+        children: [
+            {
+                path: '',
+                name: 'AdminHome',
+                component: () => import('../views/admin/AdminHome.vue')
+            },
+            {
+                path: 'orders',
+                name: 'OrderManage',
+                component: () => import('../views/admin/OrderManage.vue')
+            },
+            {
+                path: 'price-rules',
+                name: 'PriceRule',
+                component: () => import('../views/admin/PriceRule.vue')
+            },
+            {
+                path: 'statistics',
+                name: 'Statistics',
+                component: () => import('../views/admin/Statistics.vue')
+            }
+        ]
     }
 ]
 
@@ -77,8 +84,9 @@ const router = createRouter({
 // 路由守卫
 router.beforeEach((to, from, next) => {
     const userStore = useUserStore()
+    userStore.restore()
 
-    // 公开路由直接放行
+    // 公开路由
     if (to.meta.public) {
         next()
         return
@@ -91,14 +99,9 @@ router.beforeEach((to, from, next) => {
             return
         }
 
-        // 检查角色权限
-        if (to.meta.role && userStore.role !== to.meta.role) {
-            // 权限不足，跳转到对应首页
-            if (userStore.role === 'ADMIN') {
-                next('/admin')
-            } else {
-                next('/')
-            }
+        // 管理员权限检查
+        if (to.meta.admin && !userStore.isAdmin) {
+            next('/')
             return
         }
     }

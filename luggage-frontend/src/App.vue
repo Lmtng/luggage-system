@@ -3,6 +3,11 @@
 </template>
 
 <script setup>
+import { useUserStore } from './store/user'
+
+// 恢复登录状态
+const userStore = useUserStore()
+userStore.restore()
 </script>
 
 <style>
