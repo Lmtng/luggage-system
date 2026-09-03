@@ -6,6 +6,9 @@ import com.luggage.luggagesystem.dto.CreateOrderRequest;
 import com.luggage.luggagesystem.dto.CreateOrderResponse;
 import com.luggage.luggagesystem.dto.PickupVerifyRequest;
 import com.luggage.luggagesystem.dto.PickupVerifyResponse;
+import com.luggage.luggagesystem.entity.LockerCell;
+import com.luggage.luggagesystem.enums.CellSizeType;
+import com.luggage.luggagesystem.service.LockerCellService;
 import com.luggage.luggagesystem.entity.StorageOrder;
 import com.luggage.luggagesystem.exception.BusinessException;
 import com.luggage.luggagesystem.service.StorageOrderService;
@@ -14,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.List;
 
 /**
  * 订单控制器（用户端）
@@ -39,6 +43,38 @@ import java.util.Map;
 public class OrderController {
 
     private final StorageOrderService storageOrderService;
+    private final LockerCellService lockerCellService;
+
+    /**
+     * 查询空闲柜格
+     */
+    @GetMapping("/locker-cells/available")
+    public Result<List<LockerCell>> getAvailableCells(
+            @RequestParam String sizeType) {
+        log.info("查询空闲柜格: sizeType={}", sizeType);
+
+        try {
+            // 检查是否登录
+            if (AuthContext.getCurrentUserId() == null) {
+                return Result.error(1001, "请先登录");
+            }
+
+            // ✅ 将字符串转为枚举
+            CellSizeType cellSizeType;
+            try {
+                cellSizeType = CellSizeType.valueOf(sizeType.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return Result.error(1001, "无效的柜格规格: " + sizeType);
+            }
+
+            List<LockerCell> cells = lockerCellService.listAvailableCells(cellSizeType);
+            return Result.success(cells);
+
+        } catch (Exception e) {
+            log.error("查询空闲柜格失败", e);
+            return Result.error(500, "查询失败，请重试");
+        }
+    }
 
     /**
      * 创建寄存订单

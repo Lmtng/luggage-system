@@ -1,5 +1,9 @@
 package com.luggage.luggagesystem.service;
 
+import com.luggage.luggagesystem.entity.LockerCell;
+import com.luggage.luggagesystem.entity.StorageOrder;
+import com.luggage.luggagesystem.enums.CellSizeType;
+import com.luggage.luggagesystem.enums.CellStatus;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -15,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 /**
@@ -45,7 +50,7 @@ public class StorageOrderService extends ServiceImpl<StorageOrderMapper, Storage
     private final PickupCodeGenerator pickupCodeGenerator;
     private final OrderNoGenerator orderNoGenerator;
     private final PriceRuleService priceRuleService;
-
+    private final LockerCellService lockerCellService;
     // ========== 常量 ==========
 
     /**
@@ -70,9 +75,6 @@ public class StorageOrderService extends ServiceImpl<StorageOrderMapper, Storage
      * 4. 生成取件码并加密
      * 5. 保存订单
      * 6. 返回取件码给用户
-     *
-     * TODO: 调用成员A的柜格占用接口
-     *
      * @param request 创建订单请求
      * @return 创建订单响应（包含取件码）
      */
@@ -88,27 +90,32 @@ public class StorageOrderService extends ServiceImpl<StorageOrderMapper, Storage
             throw new BusinessException("请选择柜格");
         }
 
-        // 2. TODO: 调用成员A的柜格占用接口
-        // 这里模拟柜格占用成功
-        // 实际代码应该是：
-        // boolean occupied = lockerCellService.occupyCell(request.getCellId());
-        // if (!occupied) {
-        //     throw new BusinessException(BusinessException.CELL_OCCUPIED, "柜格已被占用，请重新选择");
-        // }
+        // 2. ✅ 获取柜格信息，校验是否可用
+        LockerCell cell = lockerCellService.getCellById(request.getCellId());
+        if (cell == null) {
+            throw new BusinessException("柜格不存在");
+        }
+        if (cell.getStatus() != CellStatus.AVAILABLE) {
+            throw new BusinessException(BusinessException.CELL_OCCUPIED, "柜格不可用，请重新选择");
+        }
 
-        // 模拟：假设柜格占用成功
+        // 3. ✅ 占用柜格（将状态改为 OCCUPIED）
+        boolean occupied = lockerCellService.changeCellStatus(request.getCellId(), CellStatus.OCCUPIED);
+        if (!occupied) {
+            throw new BusinessException(BusinessException.CELL_OCCUPIED, "柜格已被占用，请重新选择");
+        }
         log.info("柜格占用成功, cellId={}", request.getCellId());
 
-        // 3. 生成订单号
+        // 4. 生成订单号
         String orderNo = orderNoGenerator.generateOrderNo();
         log.info("生成订单号: {}", orderNo);
 
-        // 4. 生成取件码
+        // 5. 生成取件码
         String pickupCode = pickupCodeGenerator.generateCode();
         String pickupCodeHash = pickupCodeGenerator.encryptCode(pickupCode);
         log.info("生成取件码: {}", pickupCode);
 
-        // 5. 构建订单实体
+        // 6. 构建订单实体
         StorageOrder order = new StorageOrder();
         order.setOrderNo(orderNo);
         order.setUserId(request.getUserId());
@@ -119,18 +126,18 @@ public class StorageOrderService extends ServiceImpl<StorageOrderMapper, Storage
         order.setPaymentStatus(StorageOrder.PaymentStatus.UNPAID);
         order.setStatus(StorageOrder.OrderStatus.STORED);
 
-        // 6. 保存订单
+        // 7. 保存订单
         boolean saved = this.save(order);
         if (!saved) {
-            // TODO: 如果保存失败，需要释放柜格
+            // 保存失败，释放柜格
+            lockerCellService.changeCellStatus(request.getCellId(), CellStatus.AVAILABLE);
             throw new BusinessException("创建订单失败，请重试");
         }
 
         log.info("订单创建成功, orderId={}, orderNo={}", order.getId(), order.getOrderNo());
 
-        // 7. 返回结果
-        // TODO: 需要查询柜格编号（调用成员A接口）
-        String cellNo = "A-01"; // 模拟数据
+        // 8. ✅ 获取柜格编号
+        String cellNo = cell.getCellNo();
 
         return CreateOrderResponse.builder()
                 .orderId(order.getId())
@@ -241,35 +248,28 @@ public class StorageOrderService extends ServiceImpl<StorageOrderMapper, Storage
                     "订单状态为[" + order.getStatus() + "]，不能取件");
         }
 
-        // 5. 验证取件码（错误次数限制）
+        // 5. 验证取件码
         boolean codeMatched = pickupCodeGenerator.verifyCode(
                 request.getPickupCode(),
                 order.getPickupCodeHash()
         );
 
         if (!codeMatched) {
-            // 记录错误次数
-            int errorCount = errorCountMap.getOrDefault(request.getOrderId(), 0) + 1;
-            errorCountMap.put(request.getOrderId(), errorCount);
-
-            if (errorCount >= MAX_PICKUP_ERRORS) {
-                log.warn("取件码错误次数过多, orderId={}, count={}", request.getOrderId(), errorCount);
-                throw new BusinessException(BusinessException.PICKUP_CODE_ERROR,
-                        "取件码错误次数过多，请联系管理员");
-            }
-
-            throw new BusinessException(BusinessException.PICKUP_CODE_ERROR,
-                    "取件码错误，请重新输入（剩余尝试次数：" + (MAX_PICKUP_ERRORS - errorCount) + "）");
+            throw new BusinessException(BusinessException.PICKUP_CODE_ERROR, "取件码错误，请重新输入");
         }
 
-        // 6. 验证通过，清除错误计数
-        errorCountMap.remove(request.getOrderId());
         log.info("取件码验证通过, orderId={}", request.getOrderId());
 
-        // 7. 计算费用
-        // 获取柜格规格（TODO: 调用成员A接口获取柜格规格）
-        String sizeType = "SMALL"; // 模拟数据
+        // 6. ✅ 获取柜格信息
+        LockerCell cell = lockerCellService.getCellById(order.getCellId());
+        if (cell == null) {
+            throw new BusinessException("柜格不存在");
+        }
 
+        // 7. ✅ 获取柜格规格（枚举转字符串）
+        String sizeType = cell.getSizeType().name();  // SMALL / MEDIUM / LARGE
+
+        // 8. 计算费用
         LocalDateTime now = LocalDateTime.now();
         BigDecimal amount = priceRuleService.calculateFee(sizeType, order.getStartTime(), now);
 
@@ -277,28 +277,21 @@ public class StorageOrderService extends ServiceImpl<StorageOrderMapper, Storage
             throw new BusinessException("计费规则不存在，请联系管理员");
         }
 
-        // 获取计费规则详情（用于前端展示）
+        // 获取计费规则详情
         PriceRule rule = priceRuleService.getEnabledRuleBySizeType(sizeType);
 
         // 计算详细数据
-        long actualMinutes = java.time.temporal.ChronoUnit.MINUTES.between(order.getStartTime(), now);
+        long actualMinutes = ChronoUnit.MINUTES.between(order.getStartTime(), now);
         long chargeableMinutes = Math.max(0, actualMinutes - rule.getFreeMinutes());
         long units = (chargeableMinutes + rule.getUnitMinutes() - 1) / rule.getUnitMinutes();
 
-        // 8. 更新订单状态为 PENDING_PAYMENT
+        // 9. 更新订单状态
         order.setStatus(StorageOrder.OrderStatus.PENDING_PAYMENT);
         order.setAmount(amount);
-        boolean updated = this.updateById(order);
+        this.updateById(order);
 
-        if (!updated) {
-            throw new BusinessException("更新订单状态失败，请重试");
-        }
-
-        log.info("订单状态更新为 PENDING_PAYMENT, orderId={}, amount={}", order.getId(), amount);
-
-        // 9. 返回结果
-        // TODO: 获取柜格编号
-        String cellNo = "A-01"; // 模拟数据
+        // 10. 获取柜格编号
+        String cellNo = cell.getCellNo();
 
         return PickupVerifyResponse.builder()
                 .orderId(order.getId())
@@ -362,14 +355,13 @@ public class StorageOrderService extends ServiceImpl<StorageOrderMapper, Storage
         }
 
         // 5. 模拟支付成功
-        // 实际项目这里会调用支付接口
         log.info("模拟支付成功, orderId={}, amount={}", orderId, order.getAmount());
 
-        // 6. TODO: 释放柜格（调用成员A接口）
-        // boolean released = lockerCellService.releaseCell(order.getCellId());
-        // if (!released) {
-        //     throw new BusinessException("释放柜格失败，请联系管理员");
-        // }
+        // 6. ✅ 释放柜格（状态改为 AVAILABLE）
+        boolean released = lockerCellService.changeCellStatus(order.getCellId(), CellStatus.AVAILABLE);
+        if (!released) {
+            throw new BusinessException("释放柜格失败，请联系管理员");
+        }
         log.info("柜格释放成功, cellId={}", order.getCellId());
 
         // 7. 更新订单状态
@@ -463,12 +455,14 @@ public class StorageOrderService extends ServiceImpl<StorageOrderMapper, Storage
         }
 
         // 6. 如果调整为 COMPLETED，需要释放柜格
-        if (StorageOrder.OrderStatus.COMPLETED.equals(targetStatus) &&
-                order.getEndTime() == null) {
-            // TODO: 释放柜格
+        if (StorageOrder.OrderStatus.COMPLETED.equals(targetStatus)) {
+            // 释放柜格
+            lockerCellService.changeCellStatus(order.getCellId(), CellStatus.AVAILABLE);
             log.info("释放柜格, cellId={}", order.getCellId());
         }
-
+        // 更新状态
+        order.setStatus(targetStatus);
+        this.updateById(order);
         log.info("异常订单处理完成, orderId={}, newStatus={}", orderId, targetStatus);
     }
 
