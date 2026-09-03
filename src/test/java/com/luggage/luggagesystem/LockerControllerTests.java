@@ -2,11 +2,13 @@ package com.luggage.luggagesystem;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.luggage.luggagesystem.controller.AuthController;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +33,11 @@ class LockerControllerTests {
 
     @Test
     void lockerManagementApiWorks() throws Exception {
-        String lockerCode = "ADMIN-" + System.nanoTime();
+        MockHttpSession adminSession =
+                createAdminSession();
+
+        String lockerCode =
+                "ADMIN-" + System.nanoTime();
 
         String requestBody = """
                 {
@@ -45,42 +51,96 @@ class LockerControllerTests {
         // 新增寄存柜
         String responseBody = mockMvc.perform(
                         post("/api/admin/lockers")
-                                .contentType(MediaType.APPLICATION_JSON)
+                                .session(adminSession)
+                                .contentType(
+                                        MediaType.APPLICATION_JSON
+                                )
                                 .content(requestBody))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.lockerCode").value(lockerCode))
-                .andExpect(jsonPath("$.status").value("ENABLED"))
+                .andExpect(
+                        jsonPath("$.lockerCode")
+                                .value(lockerCode)
+                )
+                .andExpect(
+                        jsonPath("$.status")
+                                .value("ENABLED")
+                )
                 .andReturn()
                 .getResponse()
-                .getContentAsString(StandardCharsets.UTF_8);
+                .getContentAsString(
+                        StandardCharsets.UTF_8
+                );
 
         JsonNode createdLocker =
                 objectMapper.readTree(responseBody);
 
-        long lockerId = createdLocker.get("id").asLong();
+        long lockerId =
+                createdLocker.get("id").asLong();
 
-        // 根据 ID 查询
+        // 根据ID查询
         mockMvc.perform(
-                        get("/api/admin/lockers/{lockerId}", lockerId))
+                        get(
+                                "/api/admin/lockers/{lockerId}",
+                                lockerId
+                        ).session(adminSession))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(lockerId))
-                .andExpect(jsonPath("$.lockerCode").value(lockerCode));
+                .andExpect(
+                        jsonPath("$.id")
+                                .value(lockerId)
+                )
+                .andExpect(
+                        jsonPath("$.lockerCode")
+                                .value(lockerCode)
+                );
 
         // 停用寄存柜
         mockMvc.perform(
-                        put("/api/admin/lockers/{lockerId}/status", lockerId)
-                                .param("status", "DISABLED"))
+                        put(
+                                "/api/admin/lockers/{lockerId}/status",
+                                lockerId
+                        )
+                                .session(adminSession)
+                                .param(
+                                        "status",
+                                        "DISABLED"
+                                ))
                 .andExpect(status().isOk());
 
         // 确认状态已经改变
         mockMvc.perform(
-                        get("/api/admin/lockers/{lockerId}", lockerId))
+                        get(
+                                "/api/admin/lockers/{lockerId}",
+                                lockerId
+                        ).session(adminSession))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("DISABLED"));
+                .andExpect(
+                        jsonPath("$.status")
+                                .value("DISABLED")
+                );
 
-        // 查询不存在的寄存柜，应返回 404
+        // 查询不存在的寄存柜，应返回404
         mockMvc.perform(
-                        get("/api/admin/lockers/{lockerId}", 999999999L))
+                        get(
+                                "/api/admin/lockers/{lockerId}",
+                                999999999L
+                        ).session(adminSession))
                 .andExpect(status().isNotFound());
+    }
+
+    private MockHttpSession createAdminSession() {
+        MockHttpSession session =
+                new MockHttpSession();
+
+        session.setAttribute(
+                AuthController.LOGIN_USER_ID,
+                1L
+        );
+
+        session.setAttribute(
+                AuthController.LOGIN_USER_ROLE,
+                "ADMIN"
+        );
+
+        return session;
     }
 }

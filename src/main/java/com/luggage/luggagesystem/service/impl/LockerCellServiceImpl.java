@@ -1,5 +1,5 @@
 package com.luggage.luggagesystem.service.impl;
-
+import com.luggage.luggagesystem.exception.NoAvailableCellException;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.luggage.luggagesystem.entity.LockerCell;
 import com.luggage.luggagesystem.enums.CellSizeType;
@@ -161,5 +161,40 @@ public class LockerCellServiceImpl implements LockerCellService {
         );
 
         return affectedRows == 1;
+    }
+    @Override
+    @Transactional
+    public LockerCell allocateAvailableCell(
+            CellSizeType sizeType) {
+
+        if (sizeType == null) {
+            throw new IllegalArgumentException(
+                    "柜格尺寸不能为空"
+            );
+        }
+
+        List<LockerCell> candidates =
+                lockerCellMapper
+                        .selectAvailableCellsBySize(
+                                sizeType
+                        );
+
+        for (LockerCell candidate : candidates) {
+            int affectedRows =
+                    lockerCellMapper.occupyIfAvailable(
+                            candidate.getId()
+                    );
+
+            // 只有成功修改数据库状态的请求才能得到柜格
+            if (affectedRows == 1) {
+                return lockerCellMapper.selectById(
+                        candidate.getId()
+                );
+            }
+        }
+
+        throw new NoAvailableCellException(
+                "没有符合条件的可用柜格"
+        );
     }
 }
