@@ -12,6 +12,7 @@ import com.luggage.luggagesystem.service.LockerCellService;
 import com.luggage.luggagesystem.entity.StorageOrder;
 import com.luggage.luggagesystem.exception.BusinessException;
 import com.luggage.luggagesystem.service.StorageOrderService;
+import com.luggage.luggagesystem.service.impl.LockerCellServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -43,7 +44,7 @@ import java.util.List;
 public class OrderController {
 
     private final StorageOrderService storageOrderService;
-    private final LockerCellService lockerCellService;
+    private final LockerCellServiceImpl lockerCellService;
 
     /**
      * 查询空闲柜格
@@ -101,21 +102,15 @@ public class OrderController {
     @PostMapping
     public Result<CreateOrderResponse> createOrder(@RequestBody CreateOrderRequest request) {
         log.info("创建订单请求: cellId={}", request.getCellId());
-
+        // 从登录凭证获取当前用户ID，而不是由前端传入
+        Long userId = AuthContext.getCurrentUserId();
+        if (userId == null) {
+            return Result.error(1001, "用户未登录");
+        }
+        request.setUserId(userId);
         try {
-            // TODO: 从登录凭证获取当前用户ID，而不是由前端传入
-            Long userId = AuthContext.getCurrentUserId();
-            if (userId == null) {
-                return Result.error(1001, "用户未登录");
-            }
-            request.setUserId(userId);
-
-            // 临时：使用测试用户
-            // request.setUserId(100L);
-
             CreateOrderResponse response = storageOrderService.createOrder(request);
             return Result.success("寄存成功！请妥善保管取件码：" + response.getPickupCode(), response);
-
         } catch (BusinessException e) {
             log.warn("创建订单失败: {}", e.getMessage());
             return Result.error(1001, e.getMessage());
@@ -150,14 +145,11 @@ public class OrderController {
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer size) {
         log.info("查询个人订单列表: page={}, size={}", page, size);
-
+        Long userId = AuthContext.getCurrentUserId();
+        if (userId == null) {
+            return Result.error(1001, "用户未登录");
+        }
         try {
-            // TODO: 从登录凭证获取当前用户ID
-            Long userId = AuthContext.getCurrentUserId();
-            if (userId == null) {
-                return Result.error(1001, "用户未登录");
-            }
-
             var result = storageOrderService.getMyOrders(userId, page, size);
             return Result.success(result);
 
@@ -190,14 +182,11 @@ public class OrderController {
     @GetMapping("/{id}")
     public Result<StorageOrder> getOrderDetail(@PathVariable Long id) {
         log.info("查询订单详情: id={}", id);
-
+        Long userId = AuthContext.getCurrentUserId();
+        if (userId == null) {
+            return Result.error(1001, "用户未登录");
+        }
         try {
-            // TODO: 从登录凭证获取当前用户ID
-            Long userId = AuthContext.getCurrentUserId();
-            if (userId == null) {
-                return Result.error(1001, "用户未登录");
-            }
-
             StorageOrder order = storageOrderService.getOrderDetail(id, userId);
             return Result.success(order);
 
@@ -237,14 +226,11 @@ public class OrderController {
             @PathVariable Long id,
             @RequestBody Map<String, String> requestBody) {
         log.info("验证取件码: orderId={}", id);
-
+        Long userId = AuthContext.getCurrentUserId();
+        if (userId == null) {
+            return Result.error(1001, "用户未登录");
+        }
         try {
-            // TODO: 从登录凭证获取当前用户ID
-            Long userId = AuthContext.getCurrentUserId();
-            if (userId == null) {
-                return Result.error(1001, "用户未登录");
-            }
-
             String pickupCode = requestBody.get("pickupCode");
             if (pickupCode == null || pickupCode.isEmpty()) {
                 return Result.error(1001, "请输入取件码");
@@ -280,14 +266,11 @@ public class OrderController {
     @PostMapping("/{id}/complete")
     public Result<String> completeOrder(@PathVariable Long id) {
         log.info("完成取件: orderId={}", id);
-
+        Long userId = AuthContext.getCurrentUserId();
+        if (userId == null) {
+            return Result.error(1001, "用户未登录");
+        }
         try {
-            // TODO: 从登录凭证获取当前用户ID
-            Long userId = AuthContext.getCurrentUserId();
-            if (userId == null) {
-                return Result.error(1001, "用户未登录");
-            }
-
             storageOrderService.completeOrder(id, userId);
             return Result.success("取件成功！");
 

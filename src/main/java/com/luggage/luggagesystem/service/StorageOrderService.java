@@ -12,6 +12,7 @@ import com.luggage.luggagesystem.entity.PriceRule;
 import com.luggage.luggagesystem.entity.StorageOrder;
 import com.luggage.luggagesystem.exception.BusinessException;
 import com.luggage.luggagesystem.mapper.StorageOrderMapper;
+import com.luggage.luggagesystem.service.impl.LockerCellServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -50,7 +51,7 @@ public class StorageOrderService extends ServiceImpl<StorageOrderMapper, Storage
     private final PickupCodeGenerator pickupCodeGenerator;
     private final OrderNoGenerator orderNoGenerator;
     private final PriceRuleService priceRuleService;
-    private final LockerCellService lockerCellService;
+    private final LockerCellServiceImpl lockerCellService;
     // ========== 常量 ==========
 
     /**
@@ -130,7 +131,7 @@ public class StorageOrderService extends ServiceImpl<StorageOrderMapper, Storage
         boolean saved = this.save(order);
         if (!saved) {
             // 保存失败，释放柜格
-            lockerCellService.changeCellStatus(request.getCellId(), CellStatus.AVAILABLE);
+            lockerCellService.releaseCell(request.getCellId());
             throw new BusinessException("创建订单失败，请重试");
         }
 
@@ -358,7 +359,7 @@ public class StorageOrderService extends ServiceImpl<StorageOrderMapper, Storage
         log.info("模拟支付成功, orderId={}, amount={}", orderId, order.getAmount());
 
         // 6. ✅ 释放柜格（状态改为 AVAILABLE）
-        boolean released = lockerCellService.changeCellStatus(order.getCellId(), CellStatus.AVAILABLE);
+        boolean released = lockerCellService.releaseCell(order.getCellId());
         if (!released) {
             throw new BusinessException("释放柜格失败，请联系管理员");
         }
@@ -457,7 +458,10 @@ public class StorageOrderService extends ServiceImpl<StorageOrderMapper, Storage
         // 6. 如果调整为 COMPLETED，需要释放柜格
         if (StorageOrder.OrderStatus.COMPLETED.equals(targetStatus)) {
             // 释放柜格
-            lockerCellService.changeCellStatus(order.getCellId(), CellStatus.AVAILABLE);
+            boolean released = lockerCellService.releaseCell(order.getCellId());
+            if (!released) {
+                throw new BusinessException("释放柜格失败，请联系管理员");
+            }
             log.info("释放柜格, cellId={}", order.getCellId());
         }
         // 更新状态
