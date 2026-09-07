@@ -69,6 +69,7 @@
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../store/user'
 import { ElMessageBox } from 'element-plus'
+import { authApi } from "../api/auth";
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -78,7 +79,12 @@ const handleLogout = () => {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
+  }).then(async () => {
+    try {
+      await authApi.logout()  // ✅ 调用后端登出接口
+    } catch (error) {
+      // 即使后端失败，也清除前端状态
+    }
     userStore.logout()
     router.push('/login')
   }).catch(() => {})

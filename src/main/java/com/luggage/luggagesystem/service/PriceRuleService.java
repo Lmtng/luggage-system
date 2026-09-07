@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class PriceRuleService extends ServiceImpl<PriceRuleMapper, PriceRule> {
@@ -79,7 +80,7 @@ public class PriceRuleService extends ServiceImpl<PriceRuleMapper, PriceRule> {
 
     @Transactional
     public boolean addRule(PriceRule rule) {
-        if (rule.getEnabled() == PriceRule.EnabledStatus.ENABLED) {
+        if (Objects.equals(rule.getEnabled(), PriceRule.EnabledStatus.ENABLED)) {
             Long count = this.baseMapper.selectCount(
                     new LambdaQueryWrapper<PriceRule>()
                             .eq(PriceRule::getSizeType, rule.getSizeType())
@@ -99,7 +100,7 @@ public class PriceRuleService extends ServiceImpl<PriceRuleMapper, PriceRule> {
             throw new RuntimeException("计费规则不存在");
         }
 
-        if (rule.getEnabled() == PriceRule.EnabledStatus.ENABLED) {
+        if (Objects.equals(rule.getEnabled(), PriceRule.EnabledStatus.ENABLED)) {
             PriceRule enabledRule = getEnabledRuleBySizeType(rule.getSizeType());
             if (enabledRule != null && !enabledRule.getId().equals(rule.getId())) {
                 throw new RuntimeException("该规格已存在其他启用的计费规则，请先停用旧规则");
