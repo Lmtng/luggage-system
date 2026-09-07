@@ -1,6 +1,6 @@
 package com.luggage.luggagesystem.controller;
 
-import com.luggage.luggagesystem.dto.ApiErrorResponse;
+import com.luggage.luggagesystem.common.Result;
 import com.luggage.luggagesystem.dto.LoginRequest;
 import com.luggage.luggagesystem.dto.RegisterRequest;
 import com.luggage.luggagesystem.dto.UserResponse;
@@ -8,25 +8,17 @@ import com.luggage.luggagesystem.enums.UserStatus;
 import com.luggage.luggagesystem.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.time.LocalDateTime;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    public static final String LOGIN_USER_ID =
-            "LOGIN_USER_ID";
-
-    public static final String LOGIN_USER_ROLE =
-            "LOGIN_USER_ROLE";
+    public static final String LOGIN_USER_ID = "LOGIN_USER_ID";
+    public static final String LOGIN_USER_ROLE = "LOGIN_USER_ROLE";
 
     private final UserService userService;
 
@@ -34,111 +26,114 @@ public class AuthController {
         this.userService = userService;
     }
 
+    /**
+     * 用户注册。
+     */
     @PostMapping("/register")
-    public ResponseEntity<UserResponse> register(
-            @RequestBody RegisterRequest request) {
+    public ResponseEntity<Result<UserResponse>> register(
+            @Valid @RequestBody RegisterRequest request) {
 
-        UserResponse registeredUser =
-                userService.register(request);
+        UserResponse user = userService.register(request);
+        Result<UserResponse> result =
+                Result.success("注册成功", user);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(registeredUser);
-    }
-
-    @PostMapping("/login")
-    public ResponseEntity<UserResponse> login(
-            @RequestBody LoginRequest request,
-            HttpSession session) {
-
-        UserResponse user = userService.login(request);
-
-        session.setAttribute(
-                LOGIN_USER_ID,
-                user.getId()
-        );
-
-        session.setAttribute(
-                LOGIN_USER_ROLE,
-                user.getRole().name()
-        );
-
-        return ResponseEntity.ok(user);
+                .body(result);
     }
 
     /**
-     * 查询当前登录用户。
+     * 用户登录。
+     */
+    @PostMapping("/login")
+    public ResponseEntity<Result<UserResponse>> login(
+            @Valid @RequestBody LoginRequest request,
+            HttpServletRequest servletRequest) {
+
+        UserResponse user = userService.login(request);
+
+        HttpSession session = servletRequest.getSession(true);
+        session.setAttribute(LOGIN_USER_ID, user.getId());
+        session.setAttribute(LOGIN_USER_ROLE, user.getRole().name());
+
+        Result<UserResponse> result =
+                Result.success("登录成功", user);
+
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * 获取当前登录用户。
      */
     @GetMapping("/me")
-    public ResponseEntity<?> currentUser(
+    public ResponseEntity<Result<UserResponse>> getCurrentUser(
             HttpServletRequest request) {
 
-        HttpSession session =
-                request.getSession(false);
+        HttpSession session = request.getSession(false);
 
         if (session == null) {
-            return unauthorizedResponse();
+            return unauthorized();
         }
 
         Object userIdValue =
                 session.getAttribute(LOGIN_USER_ID);
 
         if (!(userIdValue instanceof Long userId)) {
-            return unauthorizedResponse();
+            return unauthorized();
         }
 
-        UserResponse user =
-                userService.getUserById(userId);
+        UserResponse user = userService.getUserById(userId);
 
         if (user == null) {
             session.invalidate();
-            return unauthorizedResponse();
+            return unauthorized();
         }
 
         if (user.getStatus() == UserStatus.DISABLED) {
             session.invalidate();
 
-            ApiErrorResponse error =
-                    new ApiErrorResponse(
+            Result<UserResponse> result =
+                    Result.error(
                             HttpStatus.FORBIDDEN.value(),
-                            "账号已被禁用",
-                            LocalDateTime.now()
+                            "账号已被停用"
                     );
 
             return ResponseEntity
                     .status(HttpStatus.FORBIDDEN)
-                    .body(error);
+                    .body(result);
         }
 
-        return ResponseEntity.ok(user);
+        return ResponseEntity.ok(Result.success(user));
     }
 
+    /**
+     * 退出登录。
+     */
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(
+    public ResponseEntity<Result<Void>> logout(
             HttpServletRequest request) {
 
-        HttpSession session =
-                request.getSession(false);
+        HttpSession session = request.getSession(false);
 
         if (session != null) {
             session.invalidate();
         }
 
-        return ResponseEntity.ok("退出登录成功");
+        Result<Void> result =
+                Result.success("退出登录成功", null);
+
+        return ResponseEntity.ok(result);
     }
 
-    private ResponseEntity<ApiErrorResponse>
-    unauthorizedResponse() {
-
-        ApiErrorResponse error =
-                new ApiErrorResponse(
+    private ResponseEntity<Result<UserResponse>> unauthorized() {
+        Result<UserResponse> result =
+                Result.error(
                         HttpStatus.UNAUTHORIZED.value(),
-                        "请先登录",
-                        LocalDateTime.now()
+                        "请先登录"
                 );
 
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .body(error);
+                .body(result);
     }
 }

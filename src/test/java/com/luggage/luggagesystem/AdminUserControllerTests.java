@@ -50,7 +50,7 @@ class AdminUserControllerTests {
 
         String password = "test123456";
 
-        // 创建一个普通用户
+        // 创建普通用户
         RegisterRequest registerRequest =
                 new RegisterRequest();
 
@@ -61,19 +61,22 @@ class AdminUserControllerTests {
         UserResponse normalUser =
                 userService.register(registerRequest);
 
-        // 创建一个管理员账号
-        SysUser administrator = createAdministrator();
+        // 创建管理员
+        SysUser administrator =
+                createAdministrator();
 
         MockHttpSession adminSession =
-                createAdminSession(administrator.getId());
+                createAdminSession(
+                        administrator.getId()
+                );
 
-        // 管理员可以查询用户列表
+        // 管理员查询用户列表
         mockMvc.perform(
                         get("/api/admin/users")
                                 .session(adminSession))
                 .andExpect(status().isOk());
 
-        // 管理员可以查询指定用户
+        // 管理员查询指定用户
         mockMvc.perform(
                         get(
                                 "/api/admin/users/{userId}",
@@ -110,7 +113,7 @@ class AdminUserControllerTests {
                                 ))
                 .andExpect(status().isOk());
 
-        // 确认用户已被禁用
+        // 确认用户已禁用
         mockMvc.perform(
                         get(
                                 "/api/admin/users/{userId}",
@@ -164,7 +167,11 @@ class AdminUserControllerTests {
                                 .content(loginBody))
                 .andExpect(status().isOk())
                 .andExpect(
-                        jsonPath("$.username")
+                        jsonPath("$.code")
+                                .value(200)
+                )
+                .andExpect(
+                        jsonPath("$.data.username")
                                 .value(username)
                 );
 
@@ -187,7 +194,7 @@ class AdminUserControllerTests {
                                 )
                 );
 
-        // 查询不存在的用户返回404
+        // 查询不存在的用户
         mockMvc.perform(
                         get(
                                 "/api/admin/users/{userId}",
@@ -197,14 +204,20 @@ class AdminUserControllerTests {
     }
 
     private SysUser createAdministrator() {
-        SysUser administrator = new SysUser();
+
+        SysUser administrator =
+                new SysUser();
 
         administrator.setUsername(
                 "admin_" + System.nanoTime()
         );
+
         administrator.setPasswordHash(
-                passwordEncoder.encode("admin123456")
+                passwordEncoder.encode(
+                        "admin123456"
+                )
         );
+
         administrator.setNickname("测试管理员");
         administrator.setRole(UserRole.ADMIN);
         administrator.setStatus(UserStatus.NORMAL);

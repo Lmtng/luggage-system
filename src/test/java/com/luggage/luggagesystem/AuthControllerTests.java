@@ -42,10 +42,14 @@ class AuthControllerTests {
 
         String password = "test123456";
 
-        // 未登录时查询当前用户，应返回401
+        // 未登录时查询当前用户
         mockMvc.perform(
                         get("/api/auth/me"))
                 .andExpect(status().isUnauthorized())
+                .andExpect(
+                        jsonPath("$.status")
+                                .value(401)
+                )
                 .andExpect(
                         jsonPath("$.message")
                                 .value("请先登录")
@@ -68,23 +72,27 @@ class AuthControllerTests {
                                 .content(registerBody))
                 .andExpect(status().isCreated())
                 .andExpect(
-                        jsonPath("$.username")
+                        jsonPath("$.code")
+                                .value(200)
+                )
+                .andExpect(
+                        jsonPath("$.data.username")
                                 .value(username)
                 )
                 .andExpect(
-                        jsonPath("$.nickname")
+                        jsonPath("$.data.nickname")
                                 .value("接口测试用户")
                 )
                 .andExpect(
-                        jsonPath("$.role")
+                        jsonPath("$.data.role")
                                 .value("USER")
                 )
                 .andExpect(
-                        jsonPath("$.status")
+                        jsonPath("$.data.status")
                                 .value("NORMAL")
                 )
                 .andExpect(
-                        jsonPath("$.passwordHash")
+                        jsonPath("$.data.passwordHash")
                                 .doesNotExist()
                 )
                 .andReturn()
@@ -93,8 +101,11 @@ class AuthControllerTests {
                         StandardCharsets.UTF_8
                 );
 
-        JsonNode registeredUser =
+        JsonNode registeredResult =
                 objectMapper.readTree(registerResponse);
+
+        JsonNode registeredUser =
+                registeredResult.get("data");
 
         long userId =
                 registeredUser.get("id").asLong();
@@ -115,11 +126,15 @@ class AuthControllerTests {
                                 .content(loginBody))
                 .andExpect(status().isOk())
                 .andExpect(
-                        jsonPath("$.id")
+                        jsonPath("$.code")
+                                .value(200)
+                )
+                .andExpect(
+                        jsonPath("$.data.id")
                                 .value(userId)
                 )
                 .andExpect(
-                        jsonPath("$.username")
+                        jsonPath("$.data.username")
                                 .value(username)
                 )
                 .andReturn();
@@ -151,19 +166,23 @@ class AuthControllerTests {
                                 .session(session))
                 .andExpect(status().isOk())
                 .andExpect(
-                        jsonPath("$.id")
+                        jsonPath("$.code")
+                                .value(200)
+                )
+                .andExpect(
+                        jsonPath("$.data.id")
                                 .value(userId)
                 )
                 .andExpect(
-                        jsonPath("$.username")
+                        jsonPath("$.data.username")
                                 .value(username)
                 )
                 .andExpect(
-                        jsonPath("$.nickname")
+                        jsonPath("$.data.nickname")
                                 .value("接口测试用户")
                 )
                 .andExpect(
-                        jsonPath("$.passwordHash")
+                        jsonPath("$.data.passwordHash")
                                 .doesNotExist()
                 );
 
@@ -204,12 +223,20 @@ class AuthControllerTests {
         mockMvc.perform(
                         post("/api/auth/logout")
                                 .session(session))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(
+                        jsonPath("$.code")
+                                .value(200)
+                );
 
-        // 退出后不携带Session查询，应返回401
+        // 退出后查询当前用户
         mockMvc.perform(
                         get("/api/auth/me"))
                 .andExpect(status().isUnauthorized())
+                .andExpect(
+                        jsonPath("$.status")
+                                .value(401)
+                )
                 .andExpect(
                         jsonPath("$.message")
                                 .value("请先登录")

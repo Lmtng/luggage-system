@@ -1,0 +1,143 @@
+### ========================================
+### 行李寄存系统 - 接口测试
+### ========================================
+
+### 基础地址
+@baseUrl = http://localhost:8080
+@contentType = application/json
+
+
+### ========================================
+### 1. 认证接口
+### ========================================
+
+### 1.1 用户注册
+POST {{baseUrl}}/api/auth/register
+Content-Type: {{contentType}}
+
+{
+  "username": "testuser",
+  "password": "123456",
+  "nickname": "测试用户"
+}
+
+### 1.2 用户登录
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "testuser",
+  "password": "123456"
+}
+
+### 保存登录返回的token（手动复制到下面的变量）
+@token = mock-token-123456
+
+
+### ========================================
+### 2. 用户接口（需要登录）
+### ========================================
+
+### 2.1 获取当前用户信息
+GET {{baseUrl}}/api/users/me
+Authorization: Bearer {{token}}
+
+### 2.2 创建订单
+POST {{baseUrl}}/api/orders
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "cellId": 1
+}
+
+### 2.3 查询个人订单列表
+GET {{baseUrl}}/api/orders/my?page=1&size=10
+Authorization: Bearer {{token}}
+
+### 2.4 查询订单详情（替换 {id} 为实际订单ID）
+GET {{baseUrl}}/api/orders/1
+Authorization: Bearer {{token}}
+
+### 2.5 验证取件码（替换 {id} 为实际订单ID）
+POST {{baseUrl}}/api/orders/1/pickup/verify
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "pickupCode": "690373"
+}
+
+### 2.6 完成取件（替换 {id} 为实际订单ID）
+POST {{baseUrl}}/api/orders/1/complete
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+
+### ========================================
+### 3. 管理员接口（需要ADMIN角色）
+### ========================================
+
+### 3.1 查询所有订单
+GET {{baseUrl}}/api/admin/orders?page=1&size=10
+Authorization: Bearer {{token}}
+
+### 3.2 按状态筛选订单
+GET {{baseUrl}}/api/admin/orders?page=1&size=10&status=STORED
+Authorization: Bearer {{token}}
+
+### 3.3 获取所有计费规则
+GET {{baseUrl}}/api/admin/price-rules
+Authorization: Bearer {{token}}
+
+### 3.4 修改计费规则（替换 {id} 为实际规则ID）
+PUT {{baseUrl}}/api/admin/price-rules/1
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "unitPrice": 2.50,
+  "freeMinutes": 20,
+  "unitMinutes": 60,
+  "capAmount": 25.00,
+  "enabled": 1
+}
+
+### 3.5 处理异常订单（替换 {id} 为实际订单ID）
+PUT {{baseUrl}}/api/admin/orders/1/status
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "targetStatus": "COMPLETED"
+}
+
+### 3.6 获取统计数据
+GET {{baseUrl}}/api/admin/statistics
+Authorization: Bearer {{token}}
+
+
+### ========================================
+### 4. 异常测试
+### ========================================
+
+### 4.1 未登录访问（应该返回401）
+GET {{baseUrl}}/api/orders/my
+
+### 4.2 错误取件码验证
+POST {{baseUrl}}/api/orders/1/pickup/verify
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "pickupCode": "999999"
+}
+
+### 4.3 空取件码验证
+POST {{baseUrl}}/api/orders/1/pickup/verify
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "pickupCode": ""
+}

@@ -22,48 +22,58 @@
 
     <properties>
         <java.version>17</java.version>
+        <mybatis-plus.version>3.5.9</mybatis-plus.version>
     </properties>
 
     <dependencies>
 
-        <!-- Web开发：提供Controller、REST接口和内置Tomcat -->
+        <!-- Spring MVC、REST接口和内置Tomcat -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- 参数校验：用于校验用户名、密码等请求参数 -->
+        <!-- 请求参数校验 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
-        <!-- MyBatis-Plus：负责Java对象与数据库表之间的数据访问 -->
+
+        <!-- MyBatis-Plus Spring Boot 3 -->
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
-            <version>3.5.17</version>
+            <version>${mybatis-plus.version}</version>
         </dependency>
+
+        <!-- MyBatis-Plus分页插件 -->
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-jsqlparser</artifactId>
-            <version>3.5.17</version>
+            <version>${mybatis-plus.version}</version>
         </dependency>
 
-        <!-- MySQL数据库驱动 -->
+        <!-- MySQL驱动 -->
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
         </dependency>
 
-        <!-- 简化实体类中的Getter、Setter和构造方法 -->
+        <!-- BCrypt密码加密 -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+        </dependency>
+
+        <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
 
-        <!-- 开发时自动重启后端 -->
+        <!-- 开发时自动重启 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
@@ -71,16 +81,11 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- 单元测试 -->
+        <!-- 自动化测试 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-crypto</artifactId>
         </dependency>
 
     </dependencies>
@@ -88,15 +93,13 @@
     <build>
         <plugins>
 
-            <!--
-                显式启用Lombok注解处理器。
-                Java 23及更高版本不再默认自动发现注解处理器。
-            -->
+            <!-- Java 25运行Maven时显式启用Lombok注解处理 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <proc>full</proc>
+                    <parameters>true</parameters>
 
                     <annotationProcessorPaths>
                         <path>
@@ -108,10 +111,18 @@
                 </configuration>
             </plugin>
 
-            <!-- 将Spring Boot项目打包为可运行的JAR文件 -->
+            <!-- 将项目打包为可运行的Spring Boot程序 -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
             </plugin>
 
         </plugins>
