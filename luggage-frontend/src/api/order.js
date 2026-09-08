@@ -1,6 +1,13 @@
 import api from './index'
 
 export const orderApi = {
+    // 按规格查询当前可用柜格
+    getAvailableCells(sizeType) {
+        return api.get('/orders/locker-cells/available', {
+            params: { sizeType }
+        })
+    },
+
     // 创建订单
     create(data) {
         return api.post('/orders', data)

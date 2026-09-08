@@ -1,18 +1,28 @@
 <template>
   <div class="user-home">
-    <h2>🏠 欢迎使用行李寄存系统</h2>
+    <section class="hero-panel">
+      <div class="hero-copy">
+        <span class="hero-eyebrow">TRAVEL LIGHT · STORE SMART</span>
+        <h2>安心寄存，从容出行</h2>
+        <p>安全、便捷的智能行李寄存服务，让每一次抵达都更轻松。</p>
+        <div class="hero-actions">
+          <el-button type="primary" @click="$router.push('/orders')">查看我的订单</el-button>
+          <el-button class="hero-secondary" @click="$router.push('/pickup')">立即取件</el-button>
+        </div>
+      </div>
+    </section>
 
-    <el-row :gutter="20">
+    <el-row :gutter="22" class="main-grid">
       <!-- 左侧：选择柜格 -->
       <el-col :span="16">
-        <el-card>
+        <el-card class="selection-card">
           <template #header>
-            <span>📦 选择柜格</span>
+            <span>选择柜格</span>
           </template>
 
           <el-form label-width="100px">
             <el-form-item label="柜格规格">
-              <el-radio-group v-model="sizeType">
+              <el-radio-group v-model="sizeType" @change="queryAvailableCells">
                 <el-radio-button value="SMALL">小柜</el-radio-button>
                 <el-radio-button value="MEDIUM">中柜</el-radio-button>
                 <el-radio-button value="LARGE">大柜</el-radio-button>
@@ -36,11 +46,11 @@
                 @click="selectCell(cell.id)"
             >
               <div class="cell-no">{{ cell.cellNo }}</div>
-              <div class="cell-size">{{ cell.sizeType }}</div>
+              <div class="cell-size">{{ sizeLabel(cell.sizeType) }}</div>
               <div class="cell-status available">空闲</div>
             </div>
           </div>
-          <el-empty v-else description="暂无空闲柜格" />
+          <div v-else class="empty-state">暂无空闲柜格</div>
 
           <div v-if="selectedCellId" class="selected-info">
             <el-tag type="success">已选择柜格：{{ getSelectedCellNo() }}</el-tag>
@@ -53,9 +63,9 @@
 
       <!-- 右侧：快捷操作 -->
       <el-col :span="8">
-        <el-card>
+        <el-card class="quick-card">
           <template #header>
-            <span>⚡ 快捷操作</span>
+            <span>快捷操作</span>
           </template>
 
           <div class="quick-actions">
@@ -68,9 +78,9 @@
           </div>
         </el-card>
 
-        <el-card style="margin-top: 20px;">
+        <el-card class="statistics-card">
           <template #header>
-            <span>📋 今日统计</span>
+            <span>我的订单统计</span>
           </template>
           <div class="stat-item">
             <span>总订单数</span>
@@ -89,7 +99,7 @@
     </el-row>
 
     <!-- 创建订单成功弹窗 -->
-    <el-dialog v-model="showOrderDialog" title="✅ 寄存成功" width="400px">
+    <el-dialog v-model="showOrderDialog" title="寄存成功" width="400px">
       <div class="order-result">
         <p><strong>订单号：</strong>{{ newOrder?.orderNo }}</p>
         <p><strong>取件码：</strong><span class="pickup-code">{{ newOrder?.pickupCode }}</span></p>
@@ -108,7 +118,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { orderApi } from '../api/order'
@@ -123,7 +133,6 @@ const selectedCellId = ref(null)
 const showOrderDialog = ref(false)
 const newOrder = ref(null)
 
-// 统计数据（简单模拟）
 const statistics = reactive({
   totalOrders: 0,
   status_STORED: 0,
@@ -134,20 +143,39 @@ const statistics = reactive({
 const queryAvailableCells = async () => {
   loading.value = true
   try {
-    // TODO: 调用成员A的柜格查询接口
-    // 目前模拟数据
-    availableCells.value = [
-      { id: 1, cellNo: 'A-01', sizeType: 'SMALL', status: 'AVAILABLE' },
-      { id: 2, cellNo: 'A-02', sizeType: 'MEDIUM', status: 'AVAILABLE' },
-      { id: 3, cellNo: 'A-03', sizeType: 'LARGE', status: 'AVAILABLE' }
-    ].filter(c => c.sizeType === sizeType.value)
+    const res = await orderApi.getAvailableCells(sizeType.value)
+    availableCells.value = res.data || []
 
     if (availableCells.value.length === 0) {
       ElMessage.info('暂无空闲柜格')
     }
     selectedCellId.value = null
+  } catch (error) {
+    availableCells.value = []
+    selectedCellId.value = null
   } finally {
     loading.value = false
+  }
+}
+
+// 根据个人订单计算首页统计，不再显示固定的0。
+const loadStatistics = async () => {
+  try {
+    const res = await orderApi.getMyOrders(1, 100)
+    const pageData = res.data || {}
+    const records = pageData.records || []
+
+    statistics.totalOrders = Number(pageData.total || records.length)
+    statistics.status_STORED = records.filter(
+      order => order.status === 'STORED'
+    ).length
+    statistics.status_COMPLETED = records.filter(
+      order => order.status === 'COMPLETED'
+    ).length
+  } catch (error) {
+    statistics.totalOrders = 0
+    statistics.status_STORED = 0
+    statistics.status_COMPLETED = 0
   }
 }
 
@@ -176,7 +204,10 @@ const createOrder = async () => {
     showOrderDialog.value = true
 
     // 刷新柜格列表
-    await queryAvailableCells()
+    await Promise.all([
+      queryAvailableCells(),
+      loadStatistics()
+    ])
     ElMessage.success('寄存成功！')
   } catch (error) {
     // 错误已在拦截器中处理
@@ -193,75 +224,219 @@ const goToOrderDetail = () => {
   }
 }
 
-// 页面加载时查询柜格
-queryAvailableCells()
+onMounted(() => {
+  Promise.all([
+    queryAvailableCells(),
+    loadStatistics()
+  ])
+})
+
+const sizeLabel = size => ({
+  SMALL: '小型柜格',
+  MEDIUM: '中型柜格',
+  LARGE: '大型柜格'
+}[size] || size)
 </script>
 
 <style scoped>
 .user-home {
-  padding: 20px;
+  padding: 0;
 }
+
+.hero-panel {
+  position: relative;
+  display: flex;
+  min-height: 285px;
+  margin-bottom: 24px;
+  padding: 48px 54px;
+  align-items: center;
+  color: #f8f5ef;
+  border: 1px solid var(--brand-blue);
+  border-left: 10px solid var(--brand-aqua);
+  border-radius: 0;
+  background: linear-gradient(105deg, var(--brand-blue) 0%, var(--brand-blue) 70%, var(--brand-cyan) 100%);
+  box-shadow: 10px 10px 0 rgba(24, 77, 151, 0.11);
+}
+
+.hero-panel::before {
+  position: absolute;
+  top: 0;
+  right: 8%;
+  width: 1px;
+  height: 100%;
+  content: "";
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.hero-copy {
+  position: relative;
+  z-index: 2;
+  max-width: 650px;
+}
+
+.hero-eyebrow {
+  color: var(--brand-sun);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+}
+
+.hero-copy h2 {
+  margin: 13px 0 14px;
+  color: #fffaf3;
+  font: 700 38px/1.15 "Times New Roman", "SimSun", "宋体", serif;
+  letter-spacing: 0.03em;
+}
+
+.hero-copy p {
+  max-width: 520px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.67);
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 26px;
+}
+
+.hero-secondary {
+  color: #fffaf3 !important;
+  border-color: rgba(255, 255, 255, 0.32) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+.main-grid {
+  margin-top: 0;
+}
+
+.selection-card,
+.quick-card,
+.statistics-card {
+  height: auto;
+}
+
+.statistics-card {
+  margin-top: 20px;
+}
+
 .cell-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
   gap: 12px;
-  margin: 15px 0;
+  margin: 20px 0;
 }
+
 .cell-item {
-  border: 2px solid #e4e7ed;
-  border-radius: 8px;
-  padding: 12px;
+  position: relative;
+  padding: 18px 12px;
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s;
+  border: 1px solid var(--brand-line);
+  border-radius: 0;
+  background: var(--brand-paper);
+  transition: all 0.25s ease;
 }
+
 .cell-item:hover {
-  border-color: #409EFF;
+  border-color: var(--brand-cyan);
+  box-shadow: 6px 6px 0 rgba(24, 136, 191, 0.1);
+  transform: translateY(-2px);
 }
+
 .cell-item.selected {
-  border-color: #409EFF;
-  background: #ecf5ff;
+  color: #fff;
+  border-color: var(--brand-blue);
+  background: var(--brand-blue);
+  box-shadow: 6px 6px 0 rgba(24, 136, 191, 0.18);
 }
+
 .cell-no {
   font-size: 18px;
-  font-weight: bold;
+  font-weight: 700;
 }
+
 .cell-size {
+  margin-top: 5px;
   font-size: 12px;
-  color: #909399;
+  color: #849099;
 }
+
+.cell-item.selected .cell-size {
+  color: rgba(255, 255, 255, 0.58);
+}
+
 .cell-status {
   font-size: 12px;
-  margin-top: 4px;
+  margin-top: 7px;
 }
+
 .cell-status.available {
-  color: #67c23a;
+  color: #238f94;
 }
+
+.cell-item.selected .cell-status.available {
+  color: var(--brand-sun);
+}
+
 .selected-info {
   display: flex;
   align-items: center;
   gap: 15px;
-  margin-top: 15px;
+  margin-top: 20px;
+  padding: 15px;
+  border: 1px solid var(--brand-line);
+  border-radius: 0;
+  background: #e7f3f2;
 }
+
+.empty-state {
+  margin: 20px 0;
+  padding: 45px 20px;
+  color: var(--brand-muted);
+  text-align: center;
+  border: 1px dashed var(--brand-line);
+  background: #f4f9f8;
+}
+
 .quick-actions {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
+
+.quick-actions :deep(.el-button) {
+  width: 100%;
+  margin-left: 0;
+}
+
 .stat-item {
   display: flex;
   justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 13px 0;
+  color: #677680;
+  border-bottom: 1px solid #eeeae3;
 }
+
+.stat-item:last-child {
+  border-bottom: 0;
+}
+
 .stat-value {
-  font-weight: bold;
-  color: #409EFF;
+  color: var(--brand-blue);
+  font: 700 20px/1 "Times New Roman", "SimSun", "宋体", serif;
 }
+
 .pickup-code {
   font-size: 24px;
   font-weight: bold;
-  color: #e6a23c;
+  color: var(--brand-blue);
   letter-spacing: 4px;
+}
+
+@media (max-width: 1200px) {
+  .hero-copy { max-width: 520px; }
 }
 </style>

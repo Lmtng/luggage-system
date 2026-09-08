@@ -1,6 +1,6 @@
 <template>
   <div class="price-rule">
-    <h2>⚙️ 计费规则管理</h2>
+    <h2>计费规则管理</h2>
 
     <el-card>
       <el-table :data="rules" style="width: 100%" v-loading="loading">

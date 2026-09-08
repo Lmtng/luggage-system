@@ -2,7 +2,7 @@
   <div class="orders-page">
     <div class="page-header">
       <div>
-        <h2>📋 我的订单</h2>
+        <h2>我的订单</h2>
         <p>查看个人寄存订单及当前状态</p>
       </div>
 

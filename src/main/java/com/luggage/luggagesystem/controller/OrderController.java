@@ -12,7 +12,6 @@ import com.luggage.luggagesystem.service.LockerCellService;
 import com.luggage.luggagesystem.entity.StorageOrder;
 import com.luggage.luggagesystem.exception.BusinessException;
 import com.luggage.luggagesystem.service.StorageOrderService;
-import com.luggage.luggagesystem.service.impl.LockerCellServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -44,7 +43,7 @@ import java.util.List;
 public class OrderController {
 
     private final StorageOrderService storageOrderService;
-    private final LockerCellServiceImpl lockerCellService;
+    private final LockerCellService lockerCellService;
 
     /**
      * 查询空闲柜格

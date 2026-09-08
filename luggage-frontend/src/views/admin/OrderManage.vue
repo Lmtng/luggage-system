@@ -1,11 +1,11 @@
 <template>
   <div class="order-manage">
-    <h2>📋 订单管理</h2>
+    <h2>订单管理</h2>
 
     <el-card>
       <!-- 搜索栏 -->
       <div class="search-bar">
-        <el-select v-model="filterStatus" placeholder="全部状态" clearable @change="loadOrders">
+        <el-select v-model="filterStatus" placeholder="全部状态" @change="loadOrders">
           <el-option label="全部状态" value="" />
           <el-option label="寄存中" value="STORED" />
           <el-option label="待支付" value="PENDING_PAYMENT" />
@@ -91,16 +91,34 @@
         <el-button type="primary" @click="handleFixOrder" :loading="fixing">确认处理</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="detailDialogVisible" title="订单详情" width="650px">
+      <el-descriptions v-if="detailOrder" :column="2" border>
+        <el-descriptions-item label="订单号">{{ detailOrder.orderNo }}</el-descriptions-item>
+        <el-descriptions-item label="用户ID">{{ detailOrder.userId }}</el-descriptions-item>
+        <el-descriptions-item label="柜格ID">{{ detailOrder.cellId }}</el-descriptions-item>
+        <el-descriptions-item label="订单状态">
+          {{ getStatusLabel(detailOrder.status) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="支付状态">
+          {{ detailOrder.paymentStatus === 'PAID' ? '已支付' : '未支付' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="费用">¥{{ detailOrder.amount || 0 }}</el-descriptions-item>
+        <el-descriptions-item label="开始时间">
+          {{ formatTime(detailOrder.startTime) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="结束时间">
+          {{ detailOrder.endTime ? formatTime(detailOrder.endTime) : '-' }}
+        </el-descriptions-item>
+      </el-descriptions>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { adminApi } from '../../api/admin'
-
-const router = useRouter()
 
 const loading = ref(false)
 const orders = ref([])
@@ -114,6 +132,8 @@ const fixDialogVisible = ref(false)
 const fixOrder = ref(null)
 const fixTargetStatus = ref('COMPLETED')
 const fixing = ref(false)
+const detailDialogVisible = ref(false)
+const detailOrder = ref(null)
 
 // 状态映射
 const getStatusLabel = (status) => {
@@ -166,7 +186,8 @@ const resetFilter = () => {
 
 // 查看订单详情
 const viewDetail = (id) => {
-  router.push(`/order/${id}`)
+  detailOrder.value = orders.value.find(order => order.id === id) || null
+  detailDialogVisible.value = Boolean(detailOrder.value)
 }
 
 // 显示处理异常弹窗

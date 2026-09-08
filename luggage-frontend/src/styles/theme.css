@@ -1,0 +1,218 @@
+:root {
+  --brand-blue: #184d97;
+  --brand-cyan: #1888bf;
+  --brand-aqua: #34b8c5;
+  --brand-mint: #a7d9c7;
+  --brand-sun: #f6d081;
+  --brand-cream: #f6e9d3;
+  --brand-lavender: #bec7e1;
+  --brand-ink: #17324f;
+  --brand-ink-deep: #102942;
+  --brand-slate: #49697f;
+  --brand-mist: #edf4f6;
+  --brand-paper: #fffdf8;
+  --brand-line: #b9cbd3;
+  --brand-text: #18354a;
+  --brand-muted: #607b8d;
+  --brand-gold: #f6d081;
+  --brand-gold-light: #f6e9d3;
+
+  --el-color-primary: #184d97;
+  --el-color-primary-light-3: #5e82b8;
+  --el-color-primary-light-5: #8ca6ca;
+  --el-color-primary-light-7: #bec7e1;
+  --el-color-primary-light-9: #edf1f8;
+  --el-color-primary-dark-2: #123b75;
+  --el-color-success: #34a890;
+  --el-color-warning: #d5a63f;
+  --el-color-danger: #b85d57;
+  --el-border-radius-base: 0;
+  --el-border-radius-small: 0;
+  --el-border-radius-round: 0;
+  --el-border-radius-circle: 0;
+  --el-font-family: "Times New Roman", "SimSun", "宋体", serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  min-width: 1080px;
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  color: var(--brand-text);
+  background: var(--brand-mist);
+  font-family: "Times New Roman", "SimSun", "宋体", serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: "Times New Roman", "SimSun", "宋体", serif !important;
+}
+
+.el-message,
+.el-message-box,
+.el-notification,
+.el-popper {
+  font-family: "Times New Roman", "SimSun", "宋体", serif !important;
+}
+
+.el-message > .el-icon,
+.el-message-box__status,
+.el-notification__icon,
+.el-alert__icon,
+.el-empty__image {
+  display: none !important;
+}
+
+.el-card {
+  border: 1px solid var(--brand-line) !important;
+  border-radius: 0 !important;
+  background: rgba(255, 253, 248, 0.98) !important;
+  box-shadow: 8px 8px 0 rgba(24, 77, 151, 0.055) !important;
+}
+
+.el-card__header {
+  padding: 18px 22px !important;
+  color: var(--brand-ink);
+  border-bottom: 1px solid var(--brand-line) !important;
+  background: #f4f8f8;
+  font-weight: 700;
+}
+
+.el-card__body {
+  padding: 22px !important;
+}
+
+.el-button {
+  min-height: 38px;
+  border-radius: 0 !important;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  box-shadow: none !important;
+}
+
+.el-button--primary {
+  color: #fff !important;
+  border-color: var(--brand-blue) !important;
+  background: var(--brand-blue) !important;
+}
+
+.el-button--primary:hover,
+.el-button--primary:focus {
+  border-color: var(--brand-cyan) !important;
+  background: var(--brand-cyan) !important;
+}
+
+.el-button--success {
+  color: #143f49 !important;
+  border-color: var(--brand-mint) !important;
+  background: var(--brand-mint) !important;
+}
+
+.el-input__wrapper,
+.el-select__wrapper,
+.el-textarea__inner {
+  border-radius: 0 !important;
+  background: #fff !important;
+  box-shadow: 0 0 0 1px var(--brand-line) inset !important;
+}
+
+.el-input__wrapper.is-focus,
+.el-select__wrapper.is-focused {
+  box-shadow: 0 0 0 1px var(--brand-cyan) inset !important;
+}
+
+.el-table {
+  --el-table-header-bg-color: #184d97;
+  --el-table-header-text-color: #ffffff;
+  --el-table-row-hover-bg-color: #e8f5f4;
+  --el-table-border-color: #bdd0d8;
+  color: var(--brand-text);
+  border-radius: 0 !important;
+}
+
+.el-table th.el-table__cell {
+  height: 48px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.el-table td.el-table__cell {
+  height: 50px;
+}
+
+.el-dialog {
+  border: 1px solid var(--brand-line);
+  border-radius: 0 !important;
+  overflow: hidden;
+  box-shadow: 16px 18px 0 rgba(16, 41, 66, 0.13) !important;
+}
+
+.el-dialog__header {
+  padding: 20px 24px 17px !important;
+  border-bottom: 1px solid var(--brand-line);
+  background: #edf5f6;
+}
+
+.el-dialog__title {
+  color: var(--brand-ink);
+  font-weight: 700;
+}
+
+.el-tag {
+  border-radius: 0 !important;
+  font-weight: 700;
+}
+
+.el-radio-button:first-child .el-radio-button__inner,
+.el-radio-button:last-child .el-radio-button__inner,
+.el-radio-button__inner,
+.el-pagination button,
+.el-pager li {
+  border-radius: 0 !important;
+}
+
+.el-descriptions__table,
+.el-descriptions__cell {
+  border-color: var(--brand-line) !important;
+}
+
+.el-descriptions__label.el-descriptions__cell.is-bordered-label {
+  color: var(--brand-ink);
+  background: #dfeef1 !important;
+  font-weight: 700;
+}
+
+.el-alert {
+  border-radius: 0 !important;
+}
+
+.el-pagination {
+  --el-pagination-button-bg-color: #e3edef;
+}
+
+.page-header h2,
+.user-home h2,
+.admin-home h2,
+.order-manage h2,
+.statistics h2,
+.price-rule h2 {
+  color: var(--brand-ink);
+  letter-spacing: 0.03em;
+}
+
+::selection {
+  color: white;
+  background: var(--brand-cyan);
+}

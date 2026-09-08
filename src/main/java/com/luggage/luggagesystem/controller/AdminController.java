@@ -1,11 +1,14 @@
 package com.luggage.luggagesystem.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.luggage.luggagesystem.common.AuthContext;
 import com.luggage.luggagesystem.common.Result;
+import com.luggage.luggagesystem.entity.OperationLog;
 import com.luggage.luggagesystem.entity.PriceRule;
 import com.luggage.luggagesystem.entity.StorageOrder;
 import com.luggage.luggagesystem.exception.BusinessException;
 import com.luggage.luggagesystem.service.PriceRuleService;
+import com.luggage.luggagesystem.service.OperationLogService;
 import com.luggage.luggagesystem.service.StorageOrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +44,7 @@ public class AdminController {
 
     private final StorageOrderService storageOrderService;
     private final PriceRuleService priceRuleService;
+    private final OperationLogService operationLogService;
 
     /**
      * 管理员查询所有订单（分页）
@@ -71,9 +75,6 @@ public class AdminController {
         log.info("管理员查询订单: page={}, size={}, status={}", page, size, status);
 
         try {
-            // TODO: 校验当前用户是否为管理员
-            // 在拦截器中已经校验，这里可以省略
-
             Page<StorageOrder> result = storageOrderService.adminGetOrders(page, size, status);
             return Result.success(result);
 
@@ -117,8 +118,13 @@ public class AdminController {
 
             boolean success = priceRuleService.updateRule(rule);
             if (success) {
-                // TODO: 记录操作日志
-                // operationLogService.log(adminId, "UPDATE_PRICE_RULE", "PRICE_RULE", id, "修改了计费规则");
+                recordOperation(
+                        AuthContext.getCurrentUserId(),
+                        OperationLog.OperationType.UPDATE_PRICE_RULE,
+                        OperationLog.TargetType.PRICE_RULE,
+                        id,
+                        "修改计费规则，规格=" + rule.getSizeType()
+                );
                 return Result.success("计费规则修改成功");
             } else {
                 return Result.error(1001, "修改失败，请重试");
@@ -153,8 +159,10 @@ public class AdminController {
         log.info("管理员处理异常订单: orderId={}", id);
 
         try {
-            // TODO: 从登录凭证获取管理员ID
-            Long adminId = 1L;
+            Long adminId = AuthContext.getCurrentUserId();
+            if (adminId == null) {
+                return Result.error(401, "请先登录");
+            }
 
             String targetStatus = requestBody.get("targetStatus");
             if (targetStatus == null || targetStatus.isEmpty()) {
@@ -163,9 +171,13 @@ public class AdminController {
 
             storageOrderService.fixExceptionOrder(id, targetStatus, adminId);
 
-            // TODO: 记录操作日志
-            // operationLogService.log(adminId, "FIX_EXCEPTION_ORDER", "ORDER", id,
-            //         "将异常订单调整为: " + targetStatus);
+            recordOperation(
+                    adminId,
+                    OperationLog.OperationType.FIX_EXCEPTION_ORDER,
+                    OperationLog.TargetType.ORDER,
+                    id,
+                    "将异常订单调整为：" + targetStatus.toUpperCase()
+            );
 
             return Result.success("异常订单处理成功");
 
@@ -220,6 +232,65 @@ public class AdminController {
         } catch (Exception e) {
             log.error("获取计费规则异常", e);
             return Result.error(500, "获取失败，请重试");
+        }
+    }
+
+    /**
+     * 分页查询管理员操作日志。
+     */
+    @GetMapping("/operation-logs")
+    public Result<Page<OperationLog>> getOperationLogs(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(required = false) String operationType) {
+
+        int safePage = page == null || page < 1 ? 1 : page;
+        int safeSize = size == null || size < 1 ? 10 : Math.min(size, 100);
+
+        try {
+            Page<OperationLog> result;
+
+            if (operationType == null || operationType.isBlank()) {
+                result = operationLogService.getLogsPage(safePage, safeSize);
+            } else {
+                result = operationLogService.getLogsByType(
+                        operationType.trim().toUpperCase(),
+                        safePage,
+                        safeSize
+                );
+            }
+
+            return Result.success(result);
+        } catch (Exception e) {
+            log.error("查询操作日志异常", e);
+            return Result.error(500, "查询操作日志失败，请重试");
+        }
+    }
+
+    /**
+     * 日志写入失败不应回滚已经成功的管理操作。
+     */
+    private void recordOperation(
+            Long operatorId,
+            String operationType,
+            String targetType,
+            Long targetId,
+            String detail) {
+
+        if (operatorId == null) {
+            return;
+        }
+
+        try {
+            operationLogService.log(
+                    operatorId,
+                    operationType,
+                    targetType,
+                    targetId,
+                    detail
+            );
+        } catch (Exception e) {
+            log.error("记录管理员操作日志失败", e);
         }
     }
 }

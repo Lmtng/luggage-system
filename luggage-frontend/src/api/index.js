@@ -12,13 +12,27 @@ api.interceptors.response.use(
   response => {
     const result = response.data
 
-    if (result.code !== 200) {
-      const message = result.message || '请求失败'
-      ElMessage.error(message)
-      return Promise.reject(new Error(message))
+    // 订单、认证接口返回统一的 Result；部分早期管理接口直接返回实体或数组。
+    // 在这里将旧格式统一包装，避免正常响应被误判为失败。
+    if (
+      result !== null &&
+      typeof result === 'object' &&
+      Object.prototype.hasOwnProperty.call(result, 'code')
+    ) {
+      if (result.code !== 200) {
+        const message = result.message || '请求失败'
+        ElMessage.error(message)
+        return Promise.reject(new Error(message))
+      }
+
+      return result
     }
 
-    return result
+    return {
+      code: 200,
+      message: '操作成功',
+      data: result
+    }
   },
   error => {
     if (error.response) {

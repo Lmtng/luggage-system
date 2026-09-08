@@ -1,14 +1,11 @@
 <template>
   <div class="statistics">
-    <h2>📊 运营数据统计</h2>
+    <h2>运营数据统计</h2>
 
     <el-row :gutter="20">
       <!-- 概览卡片 -->
       <el-col :span="6" v-for="(item, key) in overviewCards" :key="key">
-        <el-card class="overview-card">
-          <div class="overview-icon" :style="{ background: item.color }">
-            {{ item.icon }}
-          </div>
+        <el-card class="overview-card" :style="{ '--accent-color': item.color }">
           <div class="overview-info">
             <div class="overview-number">{{ stats[item.key] || 0 }}</div>
             <div class="overview-label">{{ item.label }}</div>
@@ -22,7 +19,7 @@
       <el-col :span="12">
         <el-card>
           <template #header>
-            <span>📊 订单状态分布</span>
+            <span>订单状态分布</span>
           </template>
           <div class="status-distribution">
             <div
@@ -48,7 +45,7 @@
       <el-col :span="12">
         <el-card>
           <template #header>
-            <span>💰 收入统计</span>
+            <span>收入统计</span>
           </template>
           <div class="revenue-stats">
             <div class="revenue-total">
@@ -74,7 +71,6 @@
     <!-- 时间信息 -->
     <el-card style="margin-top: 20px;">
       <div class="update-time">
-        <el-icon><Clock /></el-icon>
         <span>数据更新时间：{{ currentTime }}</span>
         <el-button size="small" @click="loadStatistics">刷新数据</el-button>
       </div>
@@ -100,19 +96,19 @@ const currentTime = ref('')
 
 // 概览卡片配置
 const overviewCards = [
-  { key: 'totalOrders', label: '总订单数', icon: '📋', color: '#409EFF' },
-  { key: 'status_STORED', label: '寄存中', icon: '📦', color: '#67C23A' },
-  { key: 'status_COMPLETED', label: '已完成', icon: '✅', color: '#409EFF' },
-  { key: 'totalRevenue', label: '总收入', icon: '💰', color: '#E6A23C' }
+  { key: 'totalOrders', label: '总订单数', color: '#184D97' },
+  { key: 'status_STORED', label: '寄存中', color: '#1888BF' },
+  { key: 'status_COMPLETED', label: '已完成', color: '#34B8C5' },
+  { key: 'totalRevenue', label: '总收入', color: '#F6D081' }
 ]
 
 // 状态列表
 const statusList = {
-  STORED: { label: '寄存中', type: 'primary', color: '#409EFF' },
-  PENDING_PAYMENT: { label: '待支付', type: 'warning', color: '#E6A23C' },
-  COMPLETED: { label: '已完成', type: 'success', color: '#67C23A' },
-  CANCELLED: { label: '已取消', type: 'info', color: '#909399' },
-  EXCEPTION: { label: '异常', type: 'danger', color: '#F56C6C' }
+  STORED: { label: '寄存中', type: 'primary', color: '#1888BF' },
+  PENDING_PAYMENT: { label: '待支付', type: 'warning', color: '#F6D081' },
+  COMPLETED: { label: '已完成', type: 'success', color: '#34B8C5' },
+  CANCELLED: { label: '已取消', type: 'info', color: '#BEC7E1' },
+  EXCEPTION: { label: '异常', type: 'danger', color: '#B85D57' }
 }
 
 // 计算百分比
@@ -152,26 +148,17 @@ onMounted(() => {
   display: flex;
   align-items: center;
   padding: 15px;
-}
-.overview-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  color: white;
-  margin-right: 15px;
-  flex-shrink: 0;
+  border-top: 5px solid var(--accent-color) !important;
 }
 .overview-number {
+  color: var(--brand-blue);
+  font-family: "Times New Roman", serif;
   font-size: 28px;
   font-weight: bold;
 }
 .overview-label {
   font-size: 14px;
-  color: #909399;
+  color: var(--brand-muted);
 }
 .status-distribution {
   padding: 10px 0;
@@ -191,12 +178,12 @@ onMounted(() => {
 }
 .revenue-label {
   font-size: 16px;
-  color: #909399;
+  color: var(--brand-muted);
 }
 .revenue-amount {
   font-size: 42px;
   font-weight: bold;
-  color: #E6A23C;
+  color: var(--brand-blue);
   display: block;
   margin-top: 10px;
 }
@@ -216,7 +203,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #909399;
+  color: var(--brand-muted);
   font-size: 14px;
 }
 </style>

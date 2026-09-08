@@ -42,6 +42,11 @@ const routes = [
                 path: 'pickup',
                 name: 'Pickup',
                 component: () => import('../views/Pickup.vue')
+            },
+            {
+                path: 'profile',
+                name: 'Profile',
+                component: () => import('../views/Profile.vue')
             }
         ]
     },
@@ -63,6 +68,16 @@ const routes = [
                 component: () => import('../views/admin/OrderManage.vue')
             },
             {
+                path: 'users',
+                name: 'UserManage',
+                component: () => import('../views/admin/UserManage.vue')
+            },
+            {
+                path: 'lockers',
+                name: 'LockerManage',
+                component: () => import('../views/admin/LockerManage.vue')
+            },
+            {
                 path: 'price-rules',
                 name: 'PriceRule',
                 component: () => import('../views/admin/PriceRule.vue')
@@ -71,6 +86,11 @@ const routes = [
                 path: 'statistics',
                 name: 'Statistics',
                 component: () => import('../views/admin/Statistics.vue')
+            },
+            {
+                path: 'operation-logs',
+                name: 'OperationLogs',
+                component: () => import('../views/admin/OperationLogs.vue')
             }
         ]
     }
