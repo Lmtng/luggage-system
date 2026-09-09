@@ -1,101 +1,244 @@
-### ========================================
-### 完整业务流程测试
-### ========================================
+### ============================================
+### 行李寄存系统 - 完整流程测试
+### 使用真实 Session 登录（无需手动设置 Token）
+### ============================================
 
 @baseUrl = http://localhost:8080
 @contentType = application/json
 
-### ========================================
-### 1. 注册用户
-### ========================================
 
-POST http://localhost:8080/api/auth/register
-Content-Type: application/json
+### ============================================
+### 第一部分：用户端流程
+### ============================================
+
+
+### 1.1 用户注册
+POST {{baseUrl}}/api/auth/register
+Content-Type: {{contentType}}
 
 {
-  "username": "testuser",
+  "username": "registuser",
   "password": "123456",
   "nickname": "测试用户"
 }
 
-### ========================================
-### 2. 登录
-### ========================================
 
-POST http://localhost:8080/api/auth/login
-Content-Type: application/json
+### 1.2 用户登录
+# 登录成功后，服务器会设置 Cookie（JSESSIONID）
+# 后续请求会自动携带 Cookie
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
 
 {
-  "username": "testuser",
+  "username": "registuser",
   "password": "123456"
 }
 
-### 保存返回的 token
 
-### ========================================
-### 3. 查询空闲柜格（小柜）
-### ========================================
+### 1.3 获取当前用户信息
+GET {{baseUrl}}/api/auth/me
+Content-Type: {{contentType}}
 
-GET http://localhost:8080/api/locker-cells/available?sizeType=SMALL
-Authorization: Bearer {token}
 
-### 响应示例，记录返回的柜格ID
-### @cellId = 1
+### 1.4 查询空闲柜格（小柜）
+GET {{baseUrl}}/api/orders/locker-cells/available?sizeType=SMALL
+Content-Type: {{contentType}}
 
-### ========================================
-### 4. 创建订单
-### ========================================
 
+### 1.5 查询空闲柜格（中柜）
+GET {{baseUrl}}/api/orders/locker-cells/available?sizeType=MEDIUM
+Content-Type: {{contentType}}
+
+
+### 1.6 查询空闲柜格（大柜）
+GET {{baseUrl}}/api/orders/locker-cells/available?sizeType=LARGE
+Content-Type: {{contentType}}
+
+###
+
+### 1.7 创建订单
+# 响应中会返回取件码，请记录下来用于后续测试
 POST {{baseUrl}}/api/orders
-Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
 {
   "cellId": 1
 }
 
-### 保存返回的取件码和订单ID
-### @pickupCode = 690373
-### @orderId = 1
 
-### ========================================
-### 5. 查询个人订单列表
-### ========================================
-
+### 1.8 查询个人订单列表
 GET {{baseUrl}}/api/orders/my?page=1&size=10
-Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
 
-### ========================================
-### 6. 查询订单详情
-### ========================================
 
+### 1.9 查询订单详情（替换 {id} 为实际订单ID）
 GET {{baseUrl}}/api/orders/1
-Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
 
-### ========================================
-### 7. 验证取件码
-### ========================================
 
+### 1.10 验证取件码（替换 {id} 和 {pickupCode}）
+# 取件码从 1.7 创建订单的响应中获取
 POST {{baseUrl}}/api/orders/1/pickup/verify
-Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "pickupCode": "468442"
+}
+
+
+### 1.11 完成取件（替换 {id} 为实际订单ID）
+POST {{baseUrl}}/api/orders/1/complete
+Content-Type: {{contentType}}
+
+
+### 1.12 用户登出
+POST {{baseUrl}}/api/auth/logout
+Content-Type: {{contentType}}
+
+
+### ============================================
+### 第二部分：管理员流程
+### ============================================
+
+
+### 2.1 管理员登录
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+
+### 2.2 管理员查看所有订单
+GET {{baseUrl}}/api/admin/orders?page=1&size=10
+Content-Type: {{contentType}}
+
+
+### 2.3 管理员按状态筛选订单（STORED）
+GET {{baseUrl}}/api/admin/orders?page=1&size=10&status=STORED
+Content-Type: {{contentType}}
+
+
+### 2.4 管理员按状态筛选订单（COMPLETED）
+GET {{baseUrl}}/api/admin/orders?page=1&size=10&status=COMPLETED
+Content-Type: {{contentType}}
+
+
+### 2.5 管理员按状态筛选订单（EXCEPTION）
+GET {{baseUrl}}/api/admin/orders?page=1&size=10&status=EXCEPTION
+Content-Type: {{contentType}}
+
+
+### 2.6 管理员获取所有计费规则
+GET {{baseUrl}}/api/admin/price-rules
+Content-Type: {{contentType}}
+
+
+### 2.7 管理员修改计费规则（小柜）
+PUT {{baseUrl}}/api/admin/price-rules/1
+Content-Type: {{contentType}}
+
+{
+  "sizeType": "SMALL",
+  "unitMinutes": 60,
+  "unitPrice": 2.50,
+  "freeMinutes": 20,
+  "capAmount": 25.00,
+  "enabled": 1
+}
+
+
+### 2.8 管理员修改计费规则（中柜）
+PUT {{baseUrl}}/api/admin/price-rules/2
+Content-Type: {{contentType}}
+
+{
+  "sizeType": "MEDIUM",
+  "unitMinutes": 60,
+  "unitPrice": 4.50,
+  "freeMinutes": 20,
+  "capAmount": 40.00,
+  "enabled": 1
+}
+
+
+### 2.9 管理员修改计费规则（大柜）
+PUT {{baseUrl}}/api/admin/price-rules/3
+Content-Type: {{contentType}}
+
+{
+  "sizeType": "LARGE",
+  "unitMinutes": 60,
+  "unitPrice": 7.00,
+  "freeMinutes": 20,
+  "capAmount": 60.00,
+  "enabled": 1
+}
+
+
+### 2.10 管理员获取统计数据
+GET {{baseUrl}}/api/admin/statistics
+Content-Type: {{contentType}}
+
+
+### 2.11 管理员处理异常订单（替换 {id} 为实际订单ID）
+# 先把订单状态改为 EXCEPTION 才能测试
+# 然后执行下面的请求
+PUT {{baseUrl}}/api/admin/orders/1/status
+Content-Type: {{contentType}}
+
+{
+  "targetStatus": "COMPLETED"
+}
+
+
+### 2.12 管理员登出
+POST {{baseUrl}}/api/auth/logout
+Content-Type: {{contentType}}
+
+
+### ============================================
+### 第三部分：异常场景测试
+### ============================================
+
+
+### 3.1 未登录访问受保护接口（应返回 401）
+GET {{baseUrl}}/api/orders/my?page=1&size=10
+Content-Type: {{contentType}}
+
+
+### 3.2 错误取件码验证
+POST {{baseUrl}}/api/orders/1/pickup/verify
+Content-Type: {{contentType}}
+
+{
+  "pickupCode": "999999"
+}
+
+
+### 3.3 空取件码验证
+POST {{baseUrl}}/api/orders/1/pickup/verify
+Content-Type: {{contentType}}
+
+{
+  "pickupCode": ""
+}
+
+
+### 3.4 重复取件（已完成订单再次取件）
+# 需要先用完成取件接口完成一个订单
+# 然后再次验证同一个取件码
+POST {{baseUrl}}/api/orders/1/pickup/verify
 Content-Type: {{contentType}}
 
 {
   "pickupCode": "690373"
 }
 
-### ========================================
-### 8. 完成取件
-### ========================================
 
-POST {{baseUrl}}/api/orders/1/complete
-Authorization: Bearer {{token}}
+### 3.5 普通用户访问管理接口（应返回 403）
+# 先用普通用户登录，然后执行下面的请求
+GET {{baseUrl}}/api/admin/orders?page=1&size=10
 Content-Type: {{contentType}}
-
-### ========================================
-### 9. 验证柜格状态（查询数据库）
-### ========================================
-
-### 手动执行 SQL：
-### SELECT id, cell_no, status FROM locker_cell WHERE id = 1;
-### 应该显示 status = 'AVAILABLE'
