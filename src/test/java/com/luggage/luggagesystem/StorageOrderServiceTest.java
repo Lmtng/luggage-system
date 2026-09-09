@@ -1,13 +1,17 @@
 package com.luggage.luggagesystem;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.luggage.luggagesystem.dto.CreateOrderRequest;
 import com.luggage.luggagesystem.dto.CreateOrderResponse;
 import com.luggage.luggagesystem.dto.PickupVerifyRequest;
 import com.luggage.luggagesystem.dto.PickupVerifyResponse;
+import com.luggage.luggagesystem.entity.LockerCell;
 import com.luggage.luggagesystem.entity.PriceRule;
 import com.luggage.luggagesystem.entity.StorageOrder;
+import com.luggage.luggagesystem.enums.CellStatus;
 import com.luggage.luggagesystem.exception.BusinessException;
+import com.luggage.luggagesystem.mapper.LockerCellMapper;
 import com.luggage.luggagesystem.service.OrderNoGenerator;
 import com.luggage.luggagesystem.service.PickupCodeGenerator;
 import com.luggage.luggagesystem.service.PriceRuleService;
@@ -37,6 +41,9 @@ class StorageOrderServiceTest {
     @Autowired
     private PickupCodeGenerator pickupCodeGenerator;
 
+    @Autowired
+    private LockerCellMapper lockerCellMapper;
+
     private static final Long TEST_USER_ID = 100L;
     private static final Long TEST_ADMIN_ID = 1L;
     private static final Long TEST_CELL_ID = 1L;
@@ -52,7 +59,21 @@ class StorageOrderServiceTest {
                 TEST_USER_ID + 3, TEST_USER_ID + 4, TEST_USER_ID + 5);
         storageOrderService.remove(wrapper);
 
-        // 2. 确保计费规则存在
+        // 2. 测试固定使用柜格1～6，先在当前测试事务中恢复为空闲。
+        // 每个测试结束后会自动回滚，不会改变真实业务数据的最终状态。
+        int resetCount = lockerCellMapper.update(
+                null,
+                Wrappers.<LockerCell>lambdaUpdate()
+                        .between(
+                                LockerCell::getId,
+                                TEST_CELL_ID,
+                                TEST_CELL_ID + 5
+                        )
+                        .set(LockerCell::getStatus, CellStatus.AVAILABLE)
+        );
+        assertEquals(6, resetCount, "数据库必须包含ID为1～6的测试柜格");
+
+        // 3. 确保计费规则存在
         PriceRule rule = priceRuleService.getEnabledRuleBySizeType(TEST_SIZE_TYPE);
         if (rule == null) {
             System.out.println("插入测试计费规则...");
@@ -69,7 +90,7 @@ class StorageOrderServiceTest {
             System.out.println("✅ 计费规则已存在");
         }
 
-        // 3. 重置错误计数（通过反射或直接调用）
+        // 4. 重置错误计数（通过反射或直接调用）
         // 由于 errorCountMap 是 private static，测试环境可以忽略
         System.out.println("✅ 测试环境准备完成");
         System.out.println();
