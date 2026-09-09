@@ -44,16 +44,26 @@ CREATE TABLE IF NOT EXISTS operation_log (
                                              KEY idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='管理员操作日志表';
 
+
+
 -- ============================================================
--- 初始数据：插入计费规则
+-- 管理员账号：admin;admin123
 -- ============================================================
+INSERT INTO sys_user (username, password_hash, nickname, role, status) VALUES
+    ('admin', '$2a$10$a6kO/ycllcsRUsSp62RXXOzRhIEPbTPcmnjfNOhV9eY67BjPjUnDC', '系统管理员', 'ADMIN', 'NORMAL');
+
 INSERT INTO price_rule (size_type, unit_minutes, unit_price, free_minutes, cap_amount, enabled) VALUES
                                                                                                     ('SMALL', 60, 2.00, 30, 20.00, 1),
-                                                                                                    ('MEDIUM', 60, 3.00, 30, 30.00, 1),
-                                                                                                    ('LARGE', 60, 5.00, 30, 50.00, 1)
-ON DUPLICATE KEY UPDATE
-                     unit_minutes = VALUES(unit_minutes),
-                     unit_price = VALUES(unit_price),
-                     free_minutes = VALUES(free_minutes),
-                     cap_amount = VALUES(cap_amount),
-                     enabled = VALUES(enabled);
+                                                                                                    ('MEDIUM', 60, 4.00, 30, 35.00, 1),
+                                                                                                    ('LARGE', 60, 6.00, 30, 50.00, 1);
+
+INSERT INTO locker (locker_code, name, location, status) VALUES
+    ('LOCKER001', 'A区寄存柜', '南京站A区入口处', 'ENABLED');
+
+INSERT INTO locker_cell (locker_id, cell_no, size_type, status, version) VALUES
+                                                                             (1, 'A-01', 'SMALL', 'AVAILABLE', 0),
+                                                                             (1, 'A-02', 'SMALL', 'AVAILABLE', 0),
+                                                                             (1, 'A-03', 'MEDIUM', 'AVAILABLE', 0),
+                                                                             (1, 'A-04', 'MEDIUM', 'AVAILABLE', 0),
+                                                                             (1, 'A-05', 'LARGE', 'AVAILABLE', 0),
+                                                                             (1, 'A-06', 'LARGE', 'AVAILABLE', 0);
