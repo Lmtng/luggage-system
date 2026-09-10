@@ -95,7 +95,7 @@ public class AuthController {
             Result<UserResponse> result =
                     Result.error(
                             HttpStatus.FORBIDDEN.value(),
-                            "账号已被停用"
+                            "该账号已被停用"
                     );
 
             return ResponseEntity

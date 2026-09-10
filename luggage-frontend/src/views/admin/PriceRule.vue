@@ -2,6 +2,13 @@
   <div class="price-rule">
     <h2>计费规则管理</h2>
 
+    <el-alert
+      class="rule-notice"
+      title="某规格存在正在寄存的订单时，该规格的计费规则不可修改；全部取件完成后自动恢复编辑。"
+      type="warning"
+      :closable="false"
+    />
+
     <el-card>
       <el-table :data="rules" style="width: 100%" v-loading="loading">
         <el-table-column prop="id" label="ID" width="60" />
@@ -31,9 +38,24 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120">
+        <el-table-column label="使用情况" width="120" align="center">
           <template #default="{ row }">
-            <el-button size="small" type="primary" @click="showEditDialog(row)">编辑</el-button>
+            <el-tag :type="row.occupied ? 'warning' : 'success'">
+              {{ row.occupied ? '使用中' : '无占用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="150" align="center">
+          <template #default="{ row }">
+            <el-button
+              size="small"
+              type="primary"
+              :disabled="Boolean(row.occupied)"
+              :title="row.occupied ? '该规格仍有用户正在寄存' : '编辑计费规则'"
+              @click="showEditDialog(row)"
+            >
+              {{ row.occupied ? '暂不可编辑' : '编辑' }}
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -116,6 +138,11 @@ const loadRules = async () => {
 
 // 显示编辑弹窗
 const showEditDialog = (row) => {
+  if (row.occupied) {
+    ElMessage.warning('该规格仍有用户正在寄存，暂不能修改计费规则')
+    return
+  }
+
   Object.assign(editForm, {
     id: row.id,
     sizeType: row.sizeType,
@@ -157,5 +184,11 @@ onMounted(() => {
 <style scoped>
 .price-rule {
   padding: 0;
+}
+
+.rule-notice {
+  margin: 0 0 18px;
+  border: 1px solid #e5c36f;
+  background: #fff7df;
 }
 </style>

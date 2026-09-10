@@ -64,6 +64,7 @@
                   v-model="form.password"
                   type="password"
                   placeholder="请输入6-20位密码"
+                  show-password
               />
             </el-form-item>
 
@@ -72,6 +73,7 @@
                   v-model="form.confirmPassword"
                   type="password"
                   placeholder="请再次输入密码"
+                  show-password
                   @keyup.enter="handleRegister"
               />
             </el-form-item>

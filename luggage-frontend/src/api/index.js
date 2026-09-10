@@ -48,7 +48,18 @@ api.interceptors.response.use(
 
         window.location.href = '/login'
       } else if (status === 403) {
-        ElMessage.error('权限不足')
+        // 403不一定是权限不足，也可能是账号已被管理员停用。
+        // 优先展示后端给出的具体业务原因。
+        ElMessage.error(message)
+
+        if (message === '该账号已被停用') {
+          const userStore = useUserStore()
+          userStore.logout()
+
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login'
+          }
+        }
       } else if (status === 404) {
         ElMessage.error('接口不存在')
       } else {

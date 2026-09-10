@@ -101,7 +101,7 @@ public class UserServiceImpl implements UserService {
         }
 
         if (user.getStatus() == UserStatus.DISABLED) {
-            throw new IllegalStateException("账号已被禁用");
+            throw new IllegalStateException("该账号已被停用");
         }
 
         return toResponse(user);

@@ -55,6 +55,7 @@
                   v-model="form.password"
                   type="password"
                   placeholder="请输入密码"
+                  show-password
                   @keyup.enter="handleLogin"
               />
             </el-form-item>

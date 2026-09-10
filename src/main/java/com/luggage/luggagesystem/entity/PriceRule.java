@@ -61,6 +61,13 @@ public class PriceRule {
     @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 
+    /**
+     * 当前规格是否存在被占用的柜格。
+     * 仅用于管理端展示，不对应数据库字段。
+     */
+    @TableField(exist = false)
+    private Boolean occupied;
+
     // ============ 规格常量 ============
 
     public static final class SizeType {

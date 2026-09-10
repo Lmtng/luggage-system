@@ -77,4 +77,31 @@ public interface LockerCellMapper extends BaseMapper<LockerCell> {
     List<LockerCell> selectAvailableCellsBySize(
             @Param("sizeType") CellSizeType sizeType
     );
+
+    /**
+     * 统计指定规格中正在使用的柜格数量。
+     */
+    @Select("""
+            SELECT COUNT(*)
+            FROM locker_cell
+            WHERE size_type = #{sizeType}
+              AND status = 'OCCUPIED'
+            """)
+    long countOccupiedBySize(
+            @Param("sizeType") CellSizeType sizeType
+    );
+
+    /**
+     * 更新计费规则前锁定该规格的全部柜格。
+     * 与柜格占用更新互斥，防止检查通过后又立刻产生新占用。
+     */
+    @Select("""
+            SELECT *
+            FROM locker_cell
+            WHERE size_type = #{sizeType}
+            FOR UPDATE
+            """)
+    List<LockerCell> selectBySizeForUpdate(
+            @Param("sizeType") CellSizeType sizeType
+    );
 }

@@ -1,7 +1,13 @@
 package com.luggage.luggagesystem;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.luggage.luggagesystem.entity.LockerCell;
 import com.luggage.luggagesystem.entity.PriceRule;
+import com.luggage.luggagesystem.enums.CellSizeType;
+import com.luggage.luggagesystem.enums.CellStatus;
+import com.luggage.luggagesystem.exception.BusinessException;
+import com.luggage.luggagesystem.mapper.LockerCellMapper;
 import com.luggage.luggagesystem.mapper.PriceRuleMapper;
 import com.luggage.luggagesystem.service.PriceRuleService;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,10 +32,24 @@ class PriceRuleServiceIntegrationTest {
     @Autowired
     private PriceRuleMapper priceRuleMapper;
 
+    @Autowired
+    private LockerCellMapper lockerCellMapper;
+
     private PriceRule testRule;
 
     @BeforeEach
     void setUp() {
+
+        /*
+         * 将小型柜格在本测试事务中临时恢复为空闲，避免本机真实业务数据
+         * 影响计费规则测试。测试结束后会自动回滚。
+         */
+        lockerCellMapper.update(
+                null,
+                Wrappers.<LockerCell>lambdaUpdate()
+                        .eq(LockerCell::getSizeType, CellSizeType.SMALL)
+                        .set(LockerCell::getStatus, CellStatus.AVAILABLE)
+        );
 
         /*
          * 建表脚本可能已经添加了SMALL默认规则。
@@ -160,6 +180,52 @@ class PriceRuleServiceIntegrationTest {
         assertEquals(
                 new BigDecimal("50.00"),
                 fee4
+        );
+    }
+
+    @Test
+    void testUpdateRuleWhenNoCellIsOccupied() {
+        testRule.setUnitPrice(new BigDecimal("6.00"));
+
+        assertTrue(priceRuleService.updateRule(testRule));
+
+        PriceRule updatedRule = priceRuleMapper.selectById(testRule.getId());
+        assertEquals(new BigDecimal("6.00"), updatedRule.getUnitPrice());
+    }
+
+    @Test
+    void testUpdateRuleIsRejectedWhenCellIsOccupied() {
+        LockerCell smallCell = lockerCellMapper.selectList(
+                new LambdaQueryWrapper<LockerCell>()
+                        .eq(LockerCell::getSizeType, CellSizeType.SMALL)
+                        .last("LIMIT 1")
+        ).stream().findFirst().orElseThrow(
+                () -> new AssertionError("数据库至少需要一个小型测试柜格")
+        );
+
+        lockerCellMapper.update(
+                null,
+                Wrappers.<LockerCell>lambdaUpdate()
+                        .eq(LockerCell::getId, smallCell.getId())
+                        .set(LockerCell::getStatus, CellStatus.OCCUPIED)
+        );
+
+        PriceRule listedRule = priceRuleService.getAllRules().stream()
+                .filter(rule -> rule.getId().equals(testRule.getId()))
+                .findFirst()
+                .orElseThrow();
+        assertTrue(listedRule.getOccupied());
+
+        testRule.setUnitPrice(new BigDecimal("6.00"));
+
+        BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> priceRuleService.updateRule(testRule)
+        );
+
+        assertEquals(
+                "该规格仍有用户正在寄存，暂不能修改计费规则",
+                exception.getMessage()
         );
     }
 }

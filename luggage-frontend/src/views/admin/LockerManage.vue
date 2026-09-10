@@ -108,28 +108,54 @@
       </el-col>
     </el-row>
 
-    <el-dialog v-model="lockerDialogVisible" title="新增寄存柜" width="480px">
-      <el-form :model="lockerForm" label-width="100px">
+    <el-dialog
+      v-model="lockerDialogVisible"
+      title="新增寄存柜"
+      width="520px"
+      class="management-dialog"
+      align-center
+    >
+      <el-form :model="lockerForm" label-position="top" class="dialog-form">
         <el-form-item label="寄存柜编号" required>
-          <el-input v-model.trim="lockerForm.lockerCode" maxlength="30" />
+          <el-input
+            v-model.trim="lockerForm.lockerCode"
+            maxlength="30"
+            placeholder="请输入寄存柜编号"
+          />
         </el-form-item>
         <el-form-item label="寄存柜名称" required>
-          <el-input v-model.trim="lockerForm.name" maxlength="50" />
+          <el-input
+            v-model.trim="lockerForm.name"
+            maxlength="50"
+            placeholder="请输入寄存柜名称"
+          />
         </el-form-item>
         <el-form-item label="放置位置" required>
-          <el-input v-model.trim="lockerForm.location" maxlength="200" />
+          <el-input
+            v-model.trim="lockerForm.location"
+            maxlength="200"
+            placeholder="请输入寄存柜放置位置"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="lockerDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="savingLocker" @click="createLocker">
-          保存
-        </el-button>
+        <div class="dialog-footer">
+          <el-button @click="lockerDialogVisible = false">取消</el-button>
+          <el-button type="primary" :loading="savingLocker" @click="createLocker">
+            保存
+          </el-button>
+        </div>
       </template>
     </el-dialog>
 
-    <el-dialog v-model="cellDialogVisible" title="新增柜格" width="460px">
-      <el-form :model="cellForm" label-width="100px">
+    <el-dialog
+      v-model="cellDialogVisible"
+      title="新增柜格"
+      width="520px"
+      class="management-dialog"
+      align-center
+    >
+      <el-form :model="cellForm" label-position="top" class="dialog-form">
         <el-form-item label="所属寄存柜">
           <el-input :model-value="selectedLocker?.name" disabled />
         </el-form-item>
@@ -145,10 +171,12 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="cellDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="savingCell" @click="createCell">
-          保存
-        </el-button>
+        <div class="dialog-footer">
+          <el-button @click="cellDialogVisible = false">取消</el-button>
+          <el-button type="primary" :loading="savingCell" @click="createCell">
+            保存
+          </el-button>
+        </div>
       </template>
     </el-dialog>
   </div>
@@ -308,4 +336,58 @@ onMounted(loadLockers)
 .page-header p { margin: 0; color: #909399; font-size: 14px; }
 .card-header small { color: #909399; font-weight: normal; }
 .muted { color: #909399; font-size: 12px; }
+
+.dialog-form {
+  padding: 4px 4px 0;
+}
+
+.dialog-form :deep(.el-form-item) {
+  margin-bottom: 22px;
+}
+
+.dialog-form :deep(.el-form-item:last-child) {
+  margin-bottom: 4px;
+}
+
+.dialog-form :deep(.el-form-item__label) {
+  height: auto;
+  margin-bottom: 8px;
+  padding: 0;
+  justify-content: flex-start;
+  color: var(--brand-ink);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+  text-align: left;
+}
+
+.dialog-form :deep(.el-form-item.is-required > .el-form-item__label::before) {
+  margin-right: 6px;
+}
+
+.dialog-form :deep(.el-input),
+.dialog-form :deep(.el-select) {
+  width: 100%;
+}
+
+.dialog-form :deep(.el-input__wrapper),
+.dialog-form :deep(.el-select__wrapper) {
+  min-height: 42px;
+}
+
+.dialog-footer {
+  display: flex;
+  gap: 12px;
+  padding-top: 4px;
+  justify-content: flex-end;
+}
+
+:deep(.management-dialog .el-dialog__body) {
+  padding: 24px 28px 20px;
+}
+
+:deep(.management-dialog .el-dialog__footer) {
+  padding: 16px 28px 22px;
+  border-top: 1px solid var(--brand-line);
+}
 </style>

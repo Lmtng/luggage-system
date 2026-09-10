@@ -142,7 +142,7 @@ class AdminUserControllerTests {
                 .andExpect(status().isForbidden())
                 .andExpect(
                         jsonPath("$.message")
-                                .value("账号已被禁用")
+                                .value("该账号已被停用")
                 );
 
         // 管理员恢复普通用户

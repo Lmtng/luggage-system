@@ -106,9 +106,14 @@ class UserServiceTests {
         storedUser.setStatus(UserStatus.DISABLED);
         sysUserMapper.updateById(storedUser);
 
-        assertThrows(
+        IllegalStateException disabledException = assertThrows(
                 IllegalStateException.class,
                 () -> userService.login(loginRequest)
+        );
+
+        assertEquals(
+                "该账号已被停用",
+                disabledException.getMessage()
         );
     }
 }
