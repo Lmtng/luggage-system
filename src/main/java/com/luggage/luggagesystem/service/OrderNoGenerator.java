@@ -1,5 +1,7 @@
 package com.luggage.luggagesystem.service;
 
+import com.luggage.luggagesystem.mapper.StorageOrderMapper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -21,6 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @date 2026-09-01
  */
 @Component
+@RequiredArgsConstructor
 public class OrderNoGenerator {
 
     /**
@@ -39,15 +42,7 @@ public class OrderNoGenerator {
      */
     private static final int SEQUENCE_LENGTH = 4;
 
-    /**
-     * 序列号计数器（每天重置）
-     */
-    private final AtomicInteger sequence = new AtomicInteger(0);
-
-    /**
-     * 当前日期（用于判断是否重置序列号）
-     */
-    private String currentDate = "";
+    private final StorageOrderMapper storageOrderMapper;
 
     /**
      * 生成订单号
@@ -55,22 +50,22 @@ public class OrderNoGenerator {
      * @return 唯一订单号，如：ST202608290001
      */
     public synchronized String generateOrderNo() {
-        // 获取当前日期
         String today = LocalDateTime.now().format(DATE_FORMATTER);
+        String datePrefix = PREFIX + today;
 
-        // 如果日期变了，重置序列号
-        if (!today.equals(currentDate)) {
-            currentDate = today;
-            sequence.set(0);
+        // 查询当天最大订单号
+        String maxOrderNo = storageOrderMapper.selectMaxOrderNoByPrefix(datePrefix);
+
+        int nextSeq = 1;
+        if (maxOrderNo != null && maxOrderNo.length() >= datePrefix.length() + SEQUENCE_LENGTH) {
+            String seqStr = maxOrderNo.substring(datePrefix.length());
+            try {
+                nextSeq = Integer.parseInt(seqStr) + 1;
+            } catch (NumberFormatException e) {
+                nextSeq = 1;
+            }
         }
 
-        // 序列号加1
-        int seq = sequence.incrementAndGet();
-
-        // 格式化序列号为4位数字
-        String seqStr = String.format("%0" + SEQUENCE_LENGTH + "d", seq);
-
-        // 组装订单号
-        return PREFIX + currentDate + seqStr;
+        return datePrefix + String.format("%0" + SEQUENCE_LENGTH + "d", nextSeq);
     }
 }

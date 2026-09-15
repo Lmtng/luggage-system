@@ -146,6 +146,15 @@ public class UserServiceImpl implements UserService {
             );
         }
 
+        if (!request.getPassword().matches(".*[a-zA-Z].*")) {
+            throw new IllegalArgumentException("密码必须包含字母");
+        }
+
+        if (!request.getPassword().matches(".*\\d.*")) {
+            throw new IllegalArgumentException("密码必须包含数字");
+        }
+
+
         if (StringUtils.hasText(request.getNickname())
                 && request.getNickname().trim().length() > 30) {
 

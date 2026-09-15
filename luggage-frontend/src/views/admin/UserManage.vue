@@ -74,28 +74,23 @@ const loadUsers = async () => {
 }
 
 const toggleStatus = async user => {
-  const targetStatus = user.status === 'NORMAL' ? 'DISABLED' : 'NORMAL'
-  const action = targetStatus === 'DISABLED' ? '停用' : '恢复'
+  const isDisabling = user.status === 'NORMAL'  // 当前是正常 → 要停用
+  const action = isDisabling ? '停用' : '恢复'
+
+  const message = isDisabling
+      ? `确定要停用用户"${user.username}"吗？用户正在使用的柜格将一并释放`
+      : `确定要恢复用户"${user.username}"吗？`
 
   try {
-    await ElMessageBox.confirm(
-      `确定要${action}用户“${user.username}”吗？`,
-      '账号状态确认',
-      { type: 'warning' }
-    )
-  } catch (error) {
-    return
-  }
-
-  changingId.value = user.id
-  try {
-    await adminApi.changeUserStatus(user.id, targetStatus)
-    ElMessage.success(`账号已${action}`)
+    await ElMessageBox.confirm(message, '账号状态确认')
+    const newStatus = isDisabling ? 'DISABLED' : 'NORMAL'
+    await adminApi.changeUserStatus(user.id, newStatus)
+    ElMessage.success(`用户已${action}`)
     await loadUsers()
   } catch (error) {
-    // 错误提示由拦截器统一显示
-  } finally {
-    changingId.value = null
+    if (error !== 'cancel' && error !== 'close') {
+      // 接口错误已经统一提示
+    }
   }
 }
 

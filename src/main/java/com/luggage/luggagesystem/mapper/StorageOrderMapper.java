@@ -22,6 +22,9 @@ public interface StorageOrderMapper extends BaseMapper<StorageOrder> {
     @Select("SELECT * FROM storage_order WHERE order_no = #{orderNo}")
     StorageOrder selectByOrderNo(@Param("orderNo") String orderNo);
 
+    @Select("SELECT MAX(order_no) FROM storage_order WHERE order_no LIKE CONCAT(#{prefix}, '%')")
+    String selectMaxOrderNoByPrefix(@Param("prefix") String prefix);
+
     /**
      * 查询用户在某个柜格的寄存中订单（防止重复寄存）
      */

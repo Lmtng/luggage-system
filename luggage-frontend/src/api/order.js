@@ -8,6 +8,11 @@ export const orderApi = {
         })
     },
 
+    // 获取计费规则
+    getPriceRules() {
+        return api.get('/orders/price-rules')
+    },
+
     // 创建订单
     create(data) {
         return api.post('/orders', data)

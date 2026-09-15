@@ -3,15 +3,15 @@
     <h2>计费规则管理</h2>
 
     <el-alert
-      class="rule-notice"
-      title="某规格存在正在寄存的订单时，该规格的计费规则不可修改；全部取件完成后自动恢复编辑。"
-      type="warning"
-      :closable="false"
+        class="rule-notice"
+        title="某规格存在正在寄存的订单时，该规格的计费规则不可修改；全部取件完成后自动恢复编辑。"
+        type="warning"
+        :closable="false"
     />
 
     <el-card>
       <el-table :data="rules" style="width: 100%" v-loading="loading">
-        <el-table-column prop="id" label="ID" width="60" />
+        <el-table-column prop="id" label="ID" width="60"/>
         <el-table-column label="规格" width="100">
           <template #default="{ row }">
             <el-tag :type="getSizeTypeTag(row.sizeType)">
@@ -19,25 +19,21 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="unitMinutes" label="计费单位（分钟）" width="150" />
+        <el-table-column prop="unitMinutes" label="计费单位（分钟）" width="150"/>
         <el-table-column prop="unitPrice" label="单价（元）" width="120">
           <template #default="{ row }">
             ¥{{ row.unitPrice }}
           </template>
         </el-table-column>
-        <el-table-column prop="freeMinutes" label="免费时长（分钟）" width="150" />
+        <el-table-column prop="freeMinutes" label="免费时长（分钟）" width="150"/>
         <el-table-column prop="capAmount" label="封顶金额（元）" width="140">
           <template #default="{ row }">
             {{ row.capAmount ? '¥' + row.capAmount : '无' }}
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="row.enabled === 1 ? 'success' : 'info'">
-              {{ row.enabled === 1 ? '启用' : '停用' }}
-            </el-tag>
-          </template>
-        </el-table-column>
+        <el-form-item label="状态">
+          <el-tag type="success">启用中</el-tag>
+        </el-form-item>
         <el-table-column label="使用情况" width="120" align="center">
           <template #default="{ row }">
             <el-tag :type="row.occupied ? 'warning' : 'success'">
@@ -48,11 +44,11 @@
         <el-table-column label="操作" width="150" align="center">
           <template #default="{ row }">
             <el-button
-              size="small"
-              type="primary"
-              :disabled="Boolean(row.occupied)"
-              :title="row.occupied ? '该规格仍有用户正在寄存' : '编辑计费规则'"
-              @click="showEditDialog(row)"
+                size="small"
+                type="primary"
+                :disabled="Boolean(row.occupied)"
+                :title="row.occupied ? '该规格仍有用户正在寄存' : '编辑计费规则'"
+                @click="showEditDialog(row)"
             >
               {{ row.occupied ? '暂不可编辑' : '编辑' }}
             </el-button>
@@ -68,20 +64,20 @@
           <el-tag>{{ getSizeLabel(editForm.sizeType) }}</el-tag>
         </el-form-item>
         <el-form-item label="计费单位（分钟）">
-          <el-input-number v-model="editForm.unitMinutes" :min="1" :max="1440" />
+          <el-input-number v-model="editForm.unitMinutes" :min="1" :max="1440"/>
         </el-form-item>
         <el-form-item label="单价（元）">
-          <el-input-number v-model="editForm.unitPrice" :min="0" :precision="2" :step="0.5" />
+          <el-input-number v-model="editForm.unitPrice" :min="0" :precision="2" :step="0.5"/>
         </el-form-item>
         <el-form-item label="免费时长（分钟）">
-          <el-input-number v-model="editForm.freeMinutes" :min="0" :max="1440" />
+          <el-input-number v-model="editForm.freeMinutes" :min="0" :max="1440"/>
         </el-form-item>
         <el-form-item label="封顶金额（元）">
-          <el-input-number v-model="editForm.capAmount" :min="0" :precision="2" :step="5" placeholder="0表示不封顶" />
+          <el-input-number v-model="editForm.capAmount" :min="0" :precision="2" :step="5" placeholder="0表示不封顶"/>
           <span style="color: #909399; font-size: 12px; margin-left: 10px;">0表示不封顶</span>
         </el-form-item>
         <el-form-item label="状态">
-          <el-switch v-model="editForm.enabled" :active-value="1" :inactive-value="0" />
+          <el-tag type="success">启用中</el-tag>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -93,9 +89,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { adminApi } from '../../api/admin'
+import {ref, reactive, onMounted} from 'vue'
+import {ElMessage} from 'element-plus'
+import {adminApi} from '../../api/admin'
 
 const loading = ref(false)
 const rules = ref([])
@@ -114,12 +110,12 @@ const editForm = reactive({
 
 // 规格映射
 const getSizeLabel = (size) => {
-  const map = { SMALL: '小柜', MEDIUM: '中柜', LARGE: '大柜' }
+  const map = {SMALL: '小柜', MEDIUM: '中柜', LARGE: '大柜'}
   return map[size] || size
 }
 
 const getSizeTypeTag = (size) => {
-  const map = { SMALL: 'success', MEDIUM: 'warning', LARGE: 'danger' }
+  const map = {SMALL: 'success', MEDIUM: 'warning', LARGE: 'danger'}
   return map[size] || 'info'
 }
 
@@ -160,7 +156,8 @@ const handleUpdateRule = async () => {
   updating.value = true
   try {
     // 如果 capAmount 为 0，表示不封顶
-    const data = { ...editForm }
+    const data = {...editForm}
+    data.enabled = 1
     if (data.capAmount === 0) {
       data.capAmount = null
     }

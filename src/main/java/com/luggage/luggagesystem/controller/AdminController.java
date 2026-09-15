@@ -3,17 +3,21 @@ package com.luggage.luggagesystem.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.luggage.luggagesystem.common.AuthContext;
 import com.luggage.luggagesystem.common.Result;
+import com.luggage.luggagesystem.entity.LockerCell;
 import com.luggage.luggagesystem.entity.OperationLog;
 import com.luggage.luggagesystem.entity.PriceRule;
 import com.luggage.luggagesystem.entity.StorageOrder;
+import com.luggage.luggagesystem.enums.CellStatus;
 import com.luggage.luggagesystem.exception.BusinessException;
 import com.luggage.luggagesystem.service.PriceRuleService;
 import com.luggage.luggagesystem.service.OperationLogService;
 import com.luggage.luggagesystem.service.StorageOrderService;
+import com.luggage.luggagesystem.service.impl.LockerCellServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -45,6 +49,7 @@ public class AdminController {
     private final StorageOrderService storageOrderService;
     private final PriceRuleService priceRuleService;
     private final OperationLogService operationLogService;
+    private final LockerCellServiceImpl lockerCellServiceImpl;
 
     /**
      * 管理员查询所有订单（分页）
@@ -187,6 +192,110 @@ public class AdminController {
         } catch (Exception e) {
             log.error("处理异常订单异常", e);
             return Result.error(500, "处理失败，请重试");
+        }
+    }
+
+    /**
+     * 管理员释放柜格
+     *
+     * 使用场景：
+     * - 柜格故障需要维修
+     * - 用户求助（如取件码丢失、柜门卡住等）
+     * - 系统异常导致柜格状态不一致
+     *
+     * 业务规则：
+     * 1. 只有 OCCUPIED 状态的柜格才能被管理员释放
+     * 2. 释放时必须填写理由
+     * 3. 释放后，该柜格上所有进行中的订单会被标记为 EXCEPTION
+     * 4. 操作会记录到 operation_log 表
+     *
+     * @param cellId 柜格ID
+     * @param requestBody 请求体，包含 reason 字段
+     * @return 操作结果
+     */
+    @PostMapping("/locker-cells/{cellId}/release")
+    public Result<String> releaseCell(
+            @PathVariable Long cellId,
+            @RequestBody Map<String, String> requestBody) {
+        log.info("管理员释放柜格: cellId={}", cellId);
+
+        // 1. 权限校验
+        Long adminId = AuthContext.getCurrentUserId();
+        if (adminId == null || !AuthContext.isAdmin()) {
+            return Result.error(1001, "权限不足");
+        }
+
+        // 2. 校验理由
+        String reason = requestBody.get("reason");
+        if (reason == null || reason.trim().isEmpty()) {
+            return Result.error(1001, "请填写释放理由");
+        }
+        reason = reason.trim();
+        if (reason.length() > 500) {
+            return Result.error(1001, "释放理由不能超过500个字符");
+        }
+
+        try {
+            // 3. 查询柜格
+            LockerCell cell = lockerCellServiceImpl.getCellById(cellId);
+            if (cell == null) {
+                return Result.error(1001, "柜格不存在");
+            }
+
+            // 4. 校验柜格状态
+            if (!CellStatus.OCCUPIED.equals(cell.getStatus())) {
+                return Result.error(1001, "只有使用中的柜格才能释放，当前状态：" + cell.getStatus());
+            }
+
+            // 5. 查询该柜格上的进行中订单
+            List<StorageOrder> activeOrders = storageOrderService.lambdaQuery()
+                    .eq(StorageOrder::getCellId, cellId)
+                    .in(StorageOrder::getStatus,
+                            StorageOrder.OrderStatus.STORED,
+                            StorageOrder.OrderStatus.PENDING_PAYMENT)
+                    .list();
+
+            // 6. 释放柜格
+            boolean released = lockerCellServiceImpl.releaseCell(cellId);
+            if (!released) {
+                return Result.error(1001, "释放柜格失败，请重试");
+            }
+            log.info("柜格释放成功, cellId={}, cellNo={}", cellId, cell.getCellNo());
+
+            // 7. 将进行中的订单标记为异常
+            if (!activeOrders.isEmpty()) {
+                for (StorageOrder order : activeOrders) {
+                    order.setStatus(StorageOrder.OrderStatus.EXCEPTION);
+                    storageOrderService.updateById(order);
+
+                    log.info("订单标记为异常, orderId={}, orderNo={}",
+                            order.getId(), order.getOrderNo());
+                }
+            }
+
+            // 8. 记录操作日志
+            String detail = String.format(
+                    "管理员释放柜格 %s（ID=%d），理由：%s。影响订单数：%d",
+                    cell.getCellNo(), cellId, reason, activeOrders.size()
+            );
+            operationLogService.log(
+                    adminId,
+                    OperationLog.OperationType.OPEN_CELL,
+                    OperationLog.TargetType.CELL,
+                    cellId,
+                    detail
+            );
+
+            // 9. 返回结果
+            String message = activeOrders.isEmpty()
+                    ? "柜格已释放"
+                    : "柜格已释放，相关 " + activeOrders.size() + " 个订单已标记为异常";
+
+            return Result.success(message);
+
+        } catch (Exception e) {
+            log.error("释放柜格异常: cellId={}", cellId, e);
+            return Result.error(500, "操作失败，请重试");
         }
     }
 

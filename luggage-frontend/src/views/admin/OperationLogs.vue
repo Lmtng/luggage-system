@@ -22,12 +22,14 @@
       <el-table v-loading="loading" :data="logs" empty-text="暂无操作日志">
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="operatorId" label="管理员ID" width="110" />
-        <el-table-column label="操作类型" width="150">
-          <template #default="{ row }">{{ typeLabel(row.operationType) }}</template>
+        <el-table-column label="操作类型" width="180">
+          <template #default="{ row }">
+            {{ getOperationTypeLabel(row.operationType) }}
+          </template>
         </el-table-column>
         <el-table-column label="操作对象" width="150">
           <template #default="{ row }">
-            {{ row.targetType }} #{{ row.targetId ?? '-' }}
+            {{ getTargetTypeLabel(row.targetType) }} #{{ row.targetId }}
           </template>
         </el-table-column>
         <el-table-column prop="detail" label="详细说明" min-width="260" />
@@ -61,6 +63,34 @@ const operationType = ref('')
 const pageNum = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
+
+// 操作类型映射
+const getOperationTypeLabel = (type) => {
+  const map = {
+    UPDATE_CELL: '修改柜格',
+    UPDATE_PRICE_RULE: '修改计费规则',
+    FIX_EXCEPTION_ORDER: '处理异常订单',
+    CREATE_LOCKER: '新增寄存柜',
+    DISABLE_CELL: '停用柜格',
+    ENABLE_CELL: '启用柜格',
+    OPEN_CELL: '释放柜格',
+    CHANGE_USER_STATUS: '修改用户状态',
+    RELEASE_CELL_BY_USER_DISABLE: '停用用户释放柜格'
+  }
+  return map[type] || type
+}
+
+// 操作对象映射
+const getTargetTypeLabel = (type) => {
+  const map = {
+    CELL: '柜格',
+    PRICE_RULE: '计费规则',
+    ORDER: '订单',
+    LOCKER: '寄存柜',
+    USER: '用户'
+  }
+  return map[type] || type
+}
 
 const typeLabel = type => ({
   UPDATE_PRICE_RULE: '修改计费规则',

@@ -133,6 +133,10 @@ public class PriceRuleService extends ServiceImpl<PriceRuleMapper, PriceRule> {
             throw new BusinessException("计费规则不存在");
         }
 
+        if (rule.getEnabled() == PriceRule.EnabledStatus.DISABLED) {
+            throw new BusinessException("计费规则不能停用，只能修改数值");
+        }
+
         if (rule.getSizeType() == null) {
             rule.setSizeType(existRule.getSizeType());
         } else if (!existRule.getSizeType().equalsIgnoreCase(rule.getSizeType())) {

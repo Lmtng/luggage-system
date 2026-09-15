@@ -74,5 +74,9 @@ export const adminApi = {
         return api.get('/admin/operation-logs', {
             params: { page, size, operationType }
         })
+    },
+
+    releaseCellByAdmin(cellId, reason) {
+        return api.post(`/admin/locker-cells/${cellId}/release`, { reason })
     }
 }

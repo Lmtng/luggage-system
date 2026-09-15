@@ -38,6 +38,14 @@ public class AuthInterceptor implements HandlerInterceptor {
             return false;
         }
 
+        String path = request.getRequestURI();
+
+        if (path.equals("/api/auth/register")
+                || path.equals("/api/auth/login")
+                || path.equals("/api/price-rules")) {  // ✅ 新增
+            return true;
+        }
+
         Object userId =
                 session.getAttribute(AuthController.LOGIN_USER_ID);
 

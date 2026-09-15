@@ -59,6 +59,15 @@
           <el-button type="success" @click="goToPickup">去取件</el-button>
         </div>
 
+        <el-descriptions-item label="取件码" v-if="order.status === 'STORED'">
+          <span class="pickup-code">{{ getPickupCode(order.id) || '已隐藏' }}</span>
+        </el-descriptions-item>
+
+        <!-- 待支付：显示支付按钮 -->
+        <div v-if="order.status === 'PENDING_PAYMENT'" class="actions">
+          <el-button type="warning" @click="goToPay">去支付</el-button>
+        </div>
+
         <!-- 已完成信息 -->
         <div v-if="order.status === 'COMPLETED'" class="actions">
           <el-alert type="success" :closable="false">
@@ -123,6 +132,15 @@ const loadDetail = async () => {
   } catch (error) {
     // 错误已在拦截器中处理
   }
+}
+
+const goToPay = () => {
+  router.push(`/pickup?orderId=${order.value.id}`)
+}
+
+const getPickupCode = (orderId) => {
+  const savedOrders = JSON.parse(localStorage.getItem('myPickupCodes') || '{}')
+  return savedOrders[orderId] || null
 }
 
 onMounted(() => {

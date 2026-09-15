@@ -36,6 +36,25 @@
         />
 
         <el-table-column
+            label="取件码"
+            width="120"
+            align="center"
+        >
+          <template #default="{ row }">
+            <span
+                v-if="row.status === 'STORED' && getPickupCode(row.id)"
+                class="pickup-code"
+            >
+              {{ getPickupCode(row.id) }}
+            </span>
+            <span v-else-if="row.status === 'STORED'">
+              已隐藏
+            </span>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column
           label="订单状态"
           width="120"
           align="center"
@@ -125,6 +144,15 @@
             >
               去取件
             </el-button>
+
+            <el-button
+                v-if="row.status === 'PENDING_PAYMENT'"
+                size="small"
+                type="warning"
+                @click="goToPay(row.id)"
+            >
+              去支付
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -145,12 +173,15 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import {onMounted, onUnmounted, watch} from 'vue'
+import { ref } from 'vue'
+import {useRoute, useRouter} from 'vue-router'
 import { orderApi } from '../api/order'
 
-const router = useRouter()
+let refreshTimer = null
 
+const router = useRouter()
+const route = useRoute()
 const loading = ref(false)
 const orders = ref([])
 const pageNum = ref(1)
@@ -244,9 +275,43 @@ const goToPickup = (orderId) => {
   })
 }
 
+const goToPay = (id) => {
+  router.push(`/pickup?orderId=${id}`)
+}
+
+const handleVisibilityChange = () => {
+  if (!document.hidden) {
+    loadOrders()
+  }
+}
+
 onMounted(() => {
   loadOrders()
+  refreshTimer = setInterval(() => {
+    loadOrders()
+  }, 30000)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
 })
+
+onUnmounted(() => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+    refreshTimer = null
+  }
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+})
+
+watch(() => route.query, () => {
+  if (route.path === '/orders') {
+    loadOrders()
+  }
+})
+
+const getPickupCode = (orderId) => {
+  const savedOrders = JSON.parse(localStorage.getItem('myPickupCodes') || '{}')
+  return savedOrders[orderId] || null
+}
+
 </script>
 
 <style scoped>

@@ -7,10 +7,12 @@ import com.luggage.luggagesystem.dto.CreateOrderResponse;
 import com.luggage.luggagesystem.dto.PickupVerifyRequest;
 import com.luggage.luggagesystem.dto.PickupVerifyResponse;
 import com.luggage.luggagesystem.entity.LockerCell;
+import com.luggage.luggagesystem.entity.PriceRule;
 import com.luggage.luggagesystem.enums.CellSizeType;
 import com.luggage.luggagesystem.service.LockerCellService;
 import com.luggage.luggagesystem.entity.StorageOrder;
 import com.luggage.luggagesystem.exception.BusinessException;
+import com.luggage.luggagesystem.service.PriceRuleService;
 import com.luggage.luggagesystem.service.StorageOrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +46,7 @@ public class OrderController {
 
     private final StorageOrderService storageOrderService;
     private final LockerCellService lockerCellService;
+    private final PriceRuleService priceRuleService;
 
     /**
      * 查询空闲柜格
@@ -73,6 +76,21 @@ public class OrderController {
         } catch (Exception e) {
             log.error("查询空闲柜格失败", e);
             return Result.error(500, "查询失败，请重试");
+        }
+    }
+
+    /**
+     * 获取所有启用的计费规则（公开接口）
+     */
+    @GetMapping("/price-rules")
+    public Result<List<PriceRule>> getEnabledPriceRules() {
+        log.info("查询启用的计费规则");
+        try {
+            List<PriceRule> rules = priceRuleService.getAllEnabledRules();
+            return Result.success(rules);
+        } catch (Exception e) {
+            log.error("查询计费规则异常", e);
+            return Result.error(500, "查询失败");
         }
     }
 

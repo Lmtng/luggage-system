@@ -44,6 +44,9 @@ class StorageOrderServiceTest {
     @Autowired
     private LockerCellMapper lockerCellMapper;
 
+    @Autowired
+    private OrderNoGenerator orderNoGenerator;
+
     private static final Long TEST_USER_ID = 100L;
     private static final Long TEST_ADMIN_ID = 1L;
     private static final Long TEST_CELL_ID = 1L;
@@ -558,11 +561,9 @@ class StorageOrderServiceTest {
     void testOrderNoGenerator() {
         System.out.println("========== 测试18：订单号生成器功能 ==========");
 
-        OrderNoGenerator generator = new OrderNoGenerator();
-
-        String orderNo1 = generator.generateOrderNo();
-        String orderNo2 = generator.generateOrderNo();
-        String orderNo3 = generator.generateOrderNo();
+        String orderNo1 = orderNoGenerator.generateOrderNo();
+        String orderNo2 = orderNoGenerator.generateOrderNo();
+        String orderNo3 = orderNoGenerator.generateOrderNo();
 
         assertNotNull(orderNo1);
         assertTrue(orderNo1.startsWith("ST"));

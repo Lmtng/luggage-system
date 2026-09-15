@@ -22,7 +22,7 @@
 
           <el-form label-width="100px">
             <el-form-item label="柜格规格">
-              <el-radio-group v-model="sizeType" @change="queryAvailableCells">
+              <el-radio-group v-model="sizeType" @change="handleSizeChange">
                 <el-radio-button value="SMALL">小柜</el-radio-button>
                 <el-radio-button value="MEDIUM">中柜</el-radio-button>
                 <el-radio-button value="LARGE">大柜</el-radio-button>
@@ -35,6 +35,37 @@
               </el-button>
             </el-form-item>
           </el-form>
+
+          <!-- ✅ 计费规则卡片 -->
+          <div v-if="currentPriceRule" class="price-rule-card">
+            <div class="price-rule-header">
+              <span class="rule-tag">计费标准</span>
+              <span class="rule-size">{{ getSizeLabel(sizeType) }}</span>
+            </div>
+            <div class="price-rule-body">
+              <div class="rule-item">
+                <span class="rule-label">免费时长</span>
+                <span class="rule-value">{{ currentPriceRule.freeMinutes }} 分钟</span>
+              </div>
+              <div class="rule-item">
+                <span class="rule-label">计费单位</span>
+                <span class="rule-value">{{ currentPriceRule.unitMinutes }} 分钟</span>
+              </div>
+              <div class="rule-item">
+                <span class="rule-label">单价</span>
+                <span class="rule-value highlight">¥{{ formatAmount(currentPriceRule.unitPrice) }} / 单位</span>
+              </div>
+              <div class="rule-item">
+                <span class="rule-label">单次封顶</span>
+                <span class="rule-value">
+        {{ currentPriceRule.capAmount ? '¥' + formatAmount(currentPriceRule.capAmount) : '无' }}
+      </span>
+              </div>
+            </div>
+            <div class="price-rule-tip">
+              费用在取件时按实际寄存时长计算
+            </div>
+          </div>
 
           <!-- 柜格列表 -->
           <div v-if="availableCells.length > 0" class="cell-grid">
@@ -133,11 +164,45 @@ const selectedCellId = ref(null)
 const showOrderDialog = ref(false)
 const newOrder = ref(null)
 
+const priceRules = ref([])
+const currentPriceRule = ref(null)
+
 const statistics = reactive({
   totalOrders: 0,
   status_STORED: 0,
   status_COMPLETED: 0
 })
+
+const getSizeLabel = (size) => {
+  const map = { SMALL: '小柜', MEDIUM: '中柜', LARGE: '大柜' }
+  return map[size] || size
+}
+
+const formatAmount = (value) => {
+  const number = Number(value ?? 0)
+  return Number.isNaN(number) ? '0.00' : number.toFixed(2)
+}
+
+const updateCurrentPriceRule = () => {
+  currentPriceRule.value = priceRules.value.find(
+      rule => rule.sizeType === sizeType.value
+  ) || null
+}
+
+const handleSizeChange = () => {
+  updateCurrentPriceRule()
+  queryAvailableCells()
+}
+
+const loadPriceRules = async () => {
+  try {
+    const res = await orderApi.getPriceRules()
+    priceRules.value = res.data || []
+    updateCurrentPriceRule()
+  } catch (error) {
+    console.error('加载计费规则失败', error)
+  }
+}
 
 // 查询空闲柜格
 const queryAvailableCells = async () => {
@@ -203,6 +268,10 @@ const createOrder = async () => {
     newOrder.value = res.data
     showOrderDialog.value = true
 
+    const savedOrders = JSON.parse(localStorage.getItem('myPickupCodes') || '{}')
+    savedOrders[res.data.orderId] = res.data.pickupCode
+    localStorage.setItem('myPickupCodes', JSON.stringify(savedOrders))
+
     // 刷新柜格列表
     await Promise.all([
       queryAvailableCells(),
@@ -225,6 +294,7 @@ const goToOrderDetail = () => {
 }
 
 onMounted(() => {
+  loadPriceRules()
   Promise.all([
     queryAvailableCells(),
     loadStatistics()
@@ -239,6 +309,81 @@ const sizeLabel = size => ({
 </script>
 
 <style scoped>
+/* ✅ 计费规则卡片 */
+.price-rule-card {
+  margin: 12px 0 20px;
+  border: 1px solid #d8e6f2;
+  border-radius: 4px;
+  background: #f5fafd;
+  overflow: hidden;
+}
+
+.price-rule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: #e8f2fa;
+  border-bottom: 1px solid #d8e6f2;
+}
+
+.rule-tag {
+  font-size: 13px;
+  font-weight: bold;
+  color: #184d97;
+  letter-spacing: 0.08em;
+}
+
+.rule-size {
+  font-size: 13px;
+  color: #184d97;
+  font-weight: bold;
+}
+
+.price-rule-body {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  padding: 12px 16px;
+}
+
+.rule-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+  border-right: 1px solid #e4eef7;
+}
+
+.rule-item:last-child {
+  border-right: none;
+}
+
+.rule-label {
+  font-size: 12px;
+  color: #8492a6;
+  margin-bottom: 6px;
+}
+
+.rule-value {
+  font-size: 16px;
+  font-weight: bold;
+  color: #184d97;
+}
+
+.rule-value.highlight {
+  color: #e6a23c;
+}
+
+.price-rule-tip {
+  padding: 8px 16px;
+  font-size: 12px;
+  color: #8492a6;
+  background: #f5fafd;
+  border-top: 1px dashed #d8e6f2;
+  text-align: center;
+}
+
 .user-home {
   padding: 0;
 }

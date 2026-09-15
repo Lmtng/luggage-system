@@ -12,23 +12,23 @@
       <el-form label-width="100px">
         <el-form-item label="寄存订单">
           <el-select
-            v-model="selectedOrderId"
-            placeholder="请选择要取件的订单"
-            style="width: 360px"
-            :disabled="Boolean(verifyResult)"
+              v-model="selectedOrderId"
+              placeholder="请选择要取件的订单"
+              style="width: 360px"
+              :disabled="Boolean(verifyResult)"
           >
             <el-option
-              v-for="order in activeOrders"
-              :key="order.id"
-              :label="`${order.orderNo}（柜格 ${order.cellId}）`"
-              :value="order.id"
+                v-for="order in activeOrders"
+                :key="order.id"
+                :label="`${order.orderNo}（柜格 ${order.cellId}）`"
+                :value="order.id"
             />
           </el-select>
           <el-button
-            text
-            type="primary"
-            :disabled="Boolean(verifyResult)"
-            @click="loadActiveOrders"
+              text
+              type="primary"
+              :disabled="Boolean(verifyResult)"
+              @click="loadActiveOrders"
           >
             刷新
           </el-button>
@@ -36,20 +36,20 @@
 
         <el-form-item label="取件码">
           <el-input
-            v-model="pickupCode"
-            placeholder="请输入创建订单时获得的6位取件码"
-            maxlength="6"
-            style="width: 360px"
-            :disabled="Boolean(verifyResult)"
-            @keyup.enter="handleVerify"
+              v-model="pickupCode"
+              placeholder="请输入创建订单时获得的6位取件码"
+              maxlength="6"
+              style="width: 360px"
+              :disabled="Boolean(verifyResult)"
+              @keyup.enter="handleVerify"
           />
         </el-form-item>
 
         <el-form-item v-if="!verifyResult">
           <el-button
-            type="primary"
-            :loading="verifying"
-            @click="handleVerify"
+              type="primary"
+              :loading="verifying"
+              @click="handleVerify"
           >
             验证取件码
           </el-button>
@@ -57,8 +57,8 @@
       </el-form>
 
       <div
-        v-if="!loadingOrders && activeOrders.length === 0 && !verifyResult"
-        class="empty-state"
+          v-if="!loadingOrders && activeOrders.length === 0 && !verifyResult"
+          class="empty-state"
       >
         暂无可以取件的订单
       </div>
@@ -66,9 +66,9 @@
       <div v-if="verifyResult" class="result">
         <el-divider />
         <el-alert
-          title="取件码验证成功，请确认费用后完成模拟支付"
-          type="success"
-          :closable="false"
+            title="取件码验证成功，请确认费用后完成模拟支付"
+            type="success"
+            :closable="false"
         />
 
         <div class="fee-heading">
@@ -82,51 +82,51 @@
         <div class="fee-table-wrap">
           <table class="fee-table">
             <thead>
-              <tr>
-                <th colspan="4">寄存订单计费明细</th>
-              </tr>
+            <tr>
+              <th colspan="4">寄存订单计费明细</th>
+            </tr>
             </thead>
             <tbody>
-              <tr>
-                <th>订单号</th>
-                <td>{{ verifyResult.orderNo }}</td>
-                <th>柜格编号</th>
-                <td>{{ verifyResult.cellNo }}</td>
-              </tr>
-              <tr>
-                <th>实际时长</th>
-                <td>{{ verifyResult.actualMinutes }} 分钟</td>
-                <th>免费时长</th>
-                <td>{{ verifyResult.freeMinutes }} 分钟</td>
-              </tr>
-              <tr>
-                <th>收费时长</th>
-                <td>{{ verifyResult.chargeableMinutes }} 分钟</td>
-                <th>计费单位</th>
-                <td>{{ verifyResult.unitMinutes }} 分钟</td>
-              </tr>
-              <tr>
-                <th>计费单价</th>
-                <td>¥{{ formatAmount(verifyResult.unitPrice) }} / 单位</td>
-                <th>封顶金额</th>
-                <td>{{ verifyResult.capAmount == null ? '无' : `¥${formatAmount(verifyResult.capAmount)}` }}</td>
-              </tr>
+            <tr>
+              <th>订单号</th>
+              <td>{{ verifyResult.orderNo }}</td>
+              <th>柜格编号</th>
+              <td>{{ verifyResult.cellNo }}</td>
+            </tr>
+            <tr>
+              <th>实际时长</th>
+              <td>{{ verifyResult.actualMinutes }} 分钟</td>
+              <th>免费时长</th>
+              <td>{{ verifyResult.freeMinutes }} 分钟</td>
+            </tr>
+            <tr>
+              <th>收费时长</th>
+              <td>{{ verifyResult.chargeableMinutes }} 分钟</td>
+              <th>计费单位</th>
+              <td>{{ verifyResult.unitMinutes }} 分钟</td>
+            </tr>
+            <tr>
+              <th>计费单价</th>
+              <td>¥{{ formatAmount(verifyResult.unitPrice) }} / 单位</td>
+              <th>封顶金额</th>
+              <td>{{ verifyResult.capAmount == null ? '无' : `¥${formatAmount(verifyResult.capAmount)}` }}</td>
+            </tr>
             </tbody>
             <tfoot>
-              <tr>
-                <th colspan="3">本次应付费用</th>
-                <td class="amount">¥{{ formatAmount(verifyResult.amount) }}</td>
-              </tr>
+            <tr>
+              <th colspan="3">本次应付费用</th>
+              <td class="amount">¥{{ formatAmount(verifyResult.amount) }}</td>
+            </tr>
             </tfoot>
           </table>
         </div>
 
         <div class="actions">
           <el-button
-            type="success"
-            size="large"
-            :loading="completing"
-            @click="handleComplete"
+              type="success"
+              size="large"
+              :loading="completing"
+              @click="handleComplete"
           >
             确认支付并取件
           </el-button>
@@ -138,7 +138,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { orderApi } from '../api/order'
@@ -154,6 +154,12 @@ const verifying = ref(false)
 const completing = ref(false)
 const verifyResult = ref(null)
 
+// 定时刷新器
+let refreshTimer = null
+
+/**
+ * 加载可取的订单（STORED 状态）
+ */
 const loadActiveOrders = async () => {
   loadingOrders.value = true
 
@@ -161,17 +167,19 @@ const loadActiveOrders = async () => {
     const res = await orderApi.getMyOrders(1, 100)
     const records = res.data?.records || []
 
+    // ✅ 只显示 STORED 状态的订单
     activeOrders.value = records.filter(order => order.status === 'STORED')
 
+    // 处理路由参数 orderId
     const routeOrderId = Number(route.query.orderId)
 
     if (
-      Number.isInteger(routeOrderId) &&
-      activeOrders.value.some(order => order.id === routeOrderId)
+        Number.isInteger(routeOrderId) &&
+        activeOrders.value.some(order => order.id === routeOrderId)
     ) {
       selectedOrderId.value = routeOrderId
     } else if (
-      !activeOrders.value.some(order => order.id === selectedOrderId.value)
+        !activeOrders.value.some(order => order.id === selectedOrderId.value)
     ) {
       selectedOrderId.value = activeOrders.value[0]?.id ?? null
     }
@@ -183,6 +191,9 @@ const loadActiveOrders = async () => {
   }
 }
 
+/**
+ * 验证取件码
+ */
 const handleVerify = async () => {
   if (!selectedOrderId.value) {
     ElMessage.warning('请先选择要取件的订单')
@@ -198,8 +209,8 @@ const handleVerify = async () => {
 
   try {
     const res = await orderApi.verifyPickup(
-      selectedOrderId.value,
-      pickupCode.value
+        selectedOrderId.value,
+        pickupCode.value
     )
     verifyResult.value = res.data
     ElMessage.success('取件码验证成功')
@@ -210,6 +221,9 @@ const handleVerify = async () => {
   }
 }
 
+/**
+ * 确认支付并取件
+ */
 const handleComplete = async () => {
   const orderId = verifyResult.value?.orderId || selectedOrderId.value
 
@@ -223,7 +237,10 @@ const handleComplete = async () => {
   try {
     await orderApi.complete(orderId)
     ElMessage.success('支付与取件已完成，柜格已经释放')
-    router.push('/orders')
+    router.push({
+      path: '/orders',
+      query: { t: Date.now() }
+    })
   } catch (error) {
     // 错误提示由响应拦截器统一显示
   } finally {
@@ -234,6 +251,8 @@ const handleComplete = async () => {
 const reset = () => {
   pickupCode.value = ''
   verifyResult.value = null
+  // 重置时刷新订单列表
+  loadActiveOrders()
 }
 
 const formatAmount = value => {
@@ -241,12 +260,74 @@ const formatAmount = value => {
   return Number.isNaN(number) ? '0.00' : number.toFixed(2)
 }
 
-onMounted(() => {
-  loadActiveOrders()
+// ========== 自动刷新 ==========
+
+const startTimer = () => {
+  stopTimer()
+  refreshTimer = setInterval(() => {
+    // 未验证取件码时才自动刷新
+    if (!verifyResult.value) {
+      loadActiveOrders()
+    }
+  }, 30000)
+}
+
+const stopTimer = () => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+    refreshTimer = null
+  }
+}
+
+// 页面可见性变化
+const handleVisibilityChange = () => {
+  if (!document.hidden && !verifyResult.value) {
+    loadActiveOrders()
+  }
+}
+
+onMounted(async () => {
+  console.log('🚀 Pickup 组件挂载')
+
+  // 1. 加载可取的订单列表
+  await loadActiveOrders()
+
+  // 2. ✅ 处理 URL 参数 orderId（用于从订单列表跳转过来直接显示）
+  const id = route.query.orderId
+  if (id) {
+    try {
+      const res = await orderApi.getDetail(Number(id))
+      const order = res.data
+      if (order.status === 'PENDING_PAYMENT') {
+        // 待支付订单直接显示费用
+        verifyResult.value = {
+          orderId: order.id,
+          orderNo: order.orderNo,
+          cellNo: order.cellId,
+          amount: order.amount
+        }
+      }
+    } catch (error) {
+      console.error('加载订单详情失败:', error)
+    }
+  }
+
+  // 3. ✅ 启动定时刷新
+  startTimer()
+
+  // 4. ✅ 监听页面可见性变化
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+})
+
+onUnmounted(() => {
+  console.log('🗑️ Pickup 组件卸载')
+  stopTimer()
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 </script>
 
 <style scoped>
+/* 保持你原有的样式不变 */
 .pickup-page {
   padding: 0;
 }

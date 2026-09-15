@@ -63,6 +63,7 @@ public class OperationLog {
         public static final String CREATE_LOCKER = "CREATE_LOCKER";
         public static final String DISABLE_CELL = "DISABLE_CELL";
         public static final String ENABLE_CELL = "ENABLE_CELL";
+        public static final String OPEN_CELL = "OPEN_CELL";
     }
 
     public static final class TargetType {

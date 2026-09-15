@@ -34,6 +34,7 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/auth/register",
                         "/api/auth/login",
                         "/api/locker-cells/available",
+                        "/api/price-rules",
                         "/error"
                 )
                 .order(1);

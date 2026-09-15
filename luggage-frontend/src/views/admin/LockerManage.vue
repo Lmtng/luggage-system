@@ -90,17 +90,26 @@
               </template>
             </el-table-column>
             <el-table-column label="版本" prop="version" width="70" align="center" />
-            <el-table-column label="操作" min-width="130" align="center">
+            <el-table-column label="操作" min-width="180" align="center">
               <template #default="{ row }">
+                <!-- 占用中：显示释放按钮 -->
                 <el-button
-                  v-if="row.status !== 'OCCUPIED'"
-                  size="small"
-                  :type="row.status === 'AVAILABLE' ? 'danger' : 'success'"
-                  @click="toggleCellStatus(row)"
+                    v-if="row.status === 'OCCUPIED'"
+                    size="small"
+                    type="warning"
+                    @click="showReleaseDialog(row)"
+                >
+                  释放
+                </el-button>
+                <!-- 空闲或停用：显示停用/启用按钮 -->
+                <el-button
+                    v-else
+                    size="small"
+                    :type="row.status === 'AVAILABLE' ? 'danger' : 'success'"
+                    @click="toggleCellStatus(row)"
                 >
                   {{ row.status === 'AVAILABLE' ? '停用' : '恢复可用' }}
                 </el-button>
-                <span v-else class="muted">使用中不可修改</span>
               </template>
             </el-table-column>
           </el-table>
@@ -179,6 +188,48 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 在新增柜格弹窗 </el-dialog> 后面添加 -->
+
+    <!-- 释放柜格弹窗 -->
+    <el-dialog
+        v-model="releaseDialogVisible"
+        title="释放柜格"
+        width="520px"
+        class="management-dialog"
+        align-center
+    >
+      <el-form :model="releaseForm" label-position="top" class="dialog-form">
+        <el-form-item label="柜格编号">
+          <el-input :model-value="currentCell?.cellNo" disabled />
+        </el-form-item>
+        <el-form-item label="当前状态">
+          <el-tag type="warning">使用中</el-tag>
+        </el-form-item>
+        <el-form-item label="释放理由" required>
+          <el-input
+              v-model.trim="releaseForm.reason"
+              type="textarea"
+              :rows="3"
+              maxlength="500"
+              show-word-limit
+              placeholder="请填写释放柜格的理由（如：柜格故障需要维修、用户求助等）"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="releaseDialogVisible = false">取消</el-button>
+          <el-button
+              type="warning"
+              :loading="releasing"
+              @click="handleReleaseCell"
+          >
+            确认释放
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -196,6 +247,11 @@ const lockerDialogVisible = ref(false)
 const cellDialogVisible = ref(false)
 const savingLocker = ref(false)
 const savingCell = ref(false)
+// 释放柜格相关
+const releaseDialogVisible = ref(false)
+const currentCell = ref(null)
+const releasing = ref(false)
+const releaseForm = reactive({ reason: '' })
 
 const lockerForm = reactive({ lockerCode: '', name: '', location: '' })
 const cellForm = reactive({ cellNo: '', sizeType: 'SMALL' })
@@ -303,6 +359,33 @@ const toggleLockerStatus = async locker => {
     if (error !== 'cancel' && error !== 'close') {
       // 接口错误已经统一提示
     }
+  }
+}
+
+// 显示释放弹窗
+const showReleaseDialog = (cell) => {
+  currentCell.value = cell
+  releaseForm.reason = ''
+  releaseDialogVisible.value = true
+}
+
+// 确认释放
+const handleReleaseCell = async () => {
+  if (!releaseForm.reason.trim()) {
+    ElMessage.warning('请填写释放理由')
+    return
+  }
+
+  releasing.value = true
+  try {
+    await adminApi.releaseCellByAdmin(currentCell.value.id, releaseForm.reason)
+    ElMessage.success('柜格已释放')
+    releaseDialogVisible.value = false
+    await selectLocker(selectedLocker.value)
+  } catch (error) {
+    // 错误提示由拦截器统一显示
+  } finally {
+    releasing.value = false
   }
 }
 
