@@ -36,7 +36,6 @@ import java.util.List;
  * - POST   /api/orders/{id}/pickup/verify  验证取件码
  * - POST   /api/orders/{id}/complete   完成取件
  *
- * @author 成员B
  */
 @Slf4j
 @RestController
@@ -62,7 +61,7 @@ public class OrderController {
                 return Result.error(1001, "请先登录");
             }
 
-            // ✅ 将字符串转为枚举
+            // 将字符串转为枚举
             CellSizeType cellSizeType;
             try {
                 cellSizeType = CellSizeType.valueOf(sizeType.toUpperCase());
@@ -96,25 +95,6 @@ public class OrderController {
 
     /**
      * 创建寄存订单
-     * <p>
-     * 请求体：
-     * {
-     * "cellId": 1
-     * }
-     * 响应：
-     * {
-     * "code": 200,
-     * "message": "寄存成功！",
-     * "data": {
-     * "orderId": 1,
-     * "orderNo": "ST202609010001",
-     * "pickupCode": "690373",
-     * "cellNo": "A-01",
-     * "startTime": "2026-09-01T18:20:07",
-     * "status": "STORED",
-     * "message": "寄存成功！请妥善保管取件码：690373"
-     * }
-     * }
      */
     @PostMapping
     public Result<CreateOrderResponse> createOrder(@RequestBody CreateOrderRequest request) {

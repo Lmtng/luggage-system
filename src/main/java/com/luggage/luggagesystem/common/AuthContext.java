@@ -14,8 +14,6 @@ import org.springframework.web.context.request.ServletRequestAttributes;
  * - Long userId = AuthContext.getCurrentUserId();
  * - String role = AuthContext.getCurrentRole();
  *
- * @author 成员B
- * @date 2026-09-01
  */
 public class AuthContext {
 

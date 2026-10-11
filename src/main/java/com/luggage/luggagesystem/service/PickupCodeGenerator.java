@@ -20,9 +20,6 @@ import java.util.Set;
  * - 取件码是用户取件的凭证，必须安全存储
  * - 数据库只保存BCrypt摘要，即使泄露也无法反推出取件码
  * - 校验时比较取件码的摘要是否匹配
- *
- * @author 成员B
- * @date 2026-09-01
  */
 @Component
 public class PickupCodeGenerator {

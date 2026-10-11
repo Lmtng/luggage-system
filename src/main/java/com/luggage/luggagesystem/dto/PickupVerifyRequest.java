@@ -6,9 +6,6 @@ import lombok.Data;
  * 取件验证请求
  *
  * 用户输入取件码，请求验证并计算费用
- *
- * @author 成员B
- * @date 2026-09-01
  */
 @Data
 public class PickupVerifyRequest {

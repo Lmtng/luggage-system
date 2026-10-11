@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 public class GlobalExceptionHandler {
 
     /**
-     * 处理成员B订单模块中的业务异常。
+     * 处理订单模块中的业务异常。
      */
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiErrorResponse> handleBusinessException(

@@ -10,9 +10,6 @@ import lombok.Getter;
  * - 取件码错误
  * - 柜格已被占用
  * - 订单状态不正确
- *
- * @author 成员B
- * @date 2026-09-01
  */
 @Getter
 public class BusinessException extends RuntimeException {

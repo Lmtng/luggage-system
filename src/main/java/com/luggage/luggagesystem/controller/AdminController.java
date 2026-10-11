@@ -36,9 +36,6 @@ import java.util.Map;
  * - GET    /api/admin/statistics          获取统计数据
  *
  * 权限要求：ADMIN 角色
- *
- * @author 成员B
- * @date 2026-09-01
  */
 @Slf4j
 @RestController

@@ -6,9 +6,6 @@ import lombok.Data;
  * 统一响应封装
  *
  * 格式：{ "code": 200, "message": "操作成功", "data": {...} }
- *
- * @author 成员B
- * @date 2026-09-01
  */
 @Data
 public class Result<T> {

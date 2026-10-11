@@ -19,9 +19,6 @@ import java.util.List;
  * 设计思想：
  * 操作日志是"写多读少"的数据，主要用于事后审计和问题排查。
  * 因此本服务只提供写入和查询功能，不提供修改和删除。
- *
- * @author 成员B
- * @date 2026-08-31
  */
 @Service
 public class OperationLogService extends ServiceImpl<OperationLogMapper, OperationLog> {

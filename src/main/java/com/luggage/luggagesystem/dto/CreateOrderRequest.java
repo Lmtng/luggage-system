@@ -6,9 +6,6 @@ import lombok.Data;
  * 创建订单请求
  *
  * 用户选择柜格后，提交创建订单请求
- *
- * @author 成员B
- * @date 2026-09-01
  */
 @Data
 public class CreateOrderRequest {

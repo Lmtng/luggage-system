@@ -19,8 +19,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * - 序列号：4位数字，从0001开始，每天重置
  * - 保证了订单号的可读性和唯一性
  *
- * @author 成员B
- * @date 2026-09-01
  */
 @Component
 @RequiredArgsConstructor

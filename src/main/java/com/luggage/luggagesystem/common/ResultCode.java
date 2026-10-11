@@ -5,9 +5,6 @@ import lombok.Getter;
 
 /**
  * 统一响应码
- *
- * @author 成员B
- * @date 2026-09-01
  */
 @Getter
 @AllArgsConstructor

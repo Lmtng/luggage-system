@@ -12,9 +12,6 @@ import java.time.LocalDateTime;
  * 取件验证响应
  *
  * 验证取件码通过后，返回费用信息供用户确认
- *
- * @author 成员B
- * @date 2026-09-01
  */
 @Data
 @Builder

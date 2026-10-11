@@ -42,7 +42,7 @@ public class AuthInterceptor implements HandlerInterceptor {
 
         if (path.equals("/api/auth/register")
                 || path.equals("/api/auth/login")
-                || path.equals("/api/price-rules")) {  // ✅ 新增
+                || path.equals("/api/price-rules")) {
             return true;
         }
 
