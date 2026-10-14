@@ -1,0 +1,38 @@
+行李寄存管理系统启动说明
+
+一、运行环境
+
+1. JDK 17
+2. MySQL 8
+3. Node.js 20或以上版本
+
+二、初始化数据库
+
+请依次执行：
+
+database/01_schema_member_a.sql
+database/02_schema_member_b.sql
+
+三、启动后端
+
+双击“启动后端.cmd”，输入本机MySQL密码。
+
+后端默认端口：8080
+
+四、启动前端
+
+如果使用源代码运行，请在程序根目录执行：
+
+npm.cmd --prefix .\luggage-frontend ci
+npm.cmd --prefix .\luggage-frontend run dev
+
+前端默认地址：
+
+http://localhost:5173
+
+五、测试账号
+
+管理员账号：admin
+管理员密码：admin123
+
+普通用户可通过注册页面创建。

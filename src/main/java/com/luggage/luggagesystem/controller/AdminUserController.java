@@ -78,25 +78,25 @@ public class AdminUserController {
             );
         }
 
-        // ✅ 先查询用户，确认存在
+        // 先查询用户，确认存在
         var userResponse = userService.getUserById(userId);
         if (userResponse == null) {
             return ResponseEntity.notFound().build();
         }
 
-        // ✅ 修改用户状态
+        // 修改用户状态
         boolean success = userService.changeUserStatus(userId, status);
         if (!success) {
             return ResponseEntity.notFound().build();
         }
 
-        // ✅ 如果是停用，释放该用户所有进行中的柜格
+        // 如果是停用，释放该用户所有进行中的柜格
         int releasedCount = 0;
         if (status == UserStatus.DISABLED) {
             releasedCount = releaseUserActiveCells(userId, (Long) currentUserId);
         }
 
-        // ✅ 记录操作日志
+        // 记录操作日志
         String detail = "将用户 " + userResponse.getUsername() + " 状态改为 " + status.name();
         if (releasedCount > 0) {
             detail += "，同时释放 " + releasedCount + " 个柜格";
@@ -109,7 +109,7 @@ public class AdminUserController {
                 detail
         );
 
-        // ✅ 返回结果
+        // 返回结果
         String message = releasedCount > 0
                 ? "用户已停用，其使用的 " + releasedCount + " 个柜格已释放"
                 : "用户状态修改成功";
@@ -119,7 +119,6 @@ public class AdminUserController {
 
     /**
      * 释放用户所有进行中的订单对应的柜格
-     *
      * 处理逻辑：
      * 1. 查询用户所有 STORED 和 PENDING_PAYMENT 状态的订单
      * 2. 释放对应的柜格（OCCUPIED → AVAILABLE）

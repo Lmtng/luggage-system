@@ -41,16 +41,22 @@ npm.cmd --prefix .\luggage-frontend run dev
 
 根据终端提示访问前端地址，通常为 `http://localhost:5173`。
 
-## 四、创建演示管理员
+## 四、创建演示用户
 
-先通过注册页创建一个普通账号，例如用户名 `admin`，再进入 MySQL 执行：
+先通过注册页创建一个普通账号，例如用户名 `test`，再进入 MySQL 执行：
 
 ```sql
 USE luggage_system;
-UPDATE sys_user SET role = 'ADMIN' WHERE username = 'admin';
+UPDATE sys_user SET role = 'USER' WHERE username = 'test';
 ```
 
-退出后重新登录，该账号即可进入管理员页面。
+退出后重新登录，该账号即可进入用户页面。
+
+管理员账号已创建。
+
+管理员账号：admin
+
+管理员密码：admin123
 
 ## 五、提交前检查
 
@@ -60,5 +66,3 @@ $env:DB_PASSWORD = "你的MySQL密码"
 npm.cmd --prefix .\luggage-frontend run build
 git status
 ```
-
-不要将 MySQL 密码写入 `application.yaml` 或提交到 GitHub。
